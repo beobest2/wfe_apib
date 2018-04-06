@@ -18,7 +18,7 @@ HOST: http://192.168.100.100/wfe
     - 다수의 Task와 다수의 Flow로 구성
     - 단일 Task도 job이 될 수있음
 - Pipe
-    - Task간에 데이터가 공유되는 Queue
+    - Task간에 데이터가 공유되는 queue
     - 방향성 존재
 -  Group
     - Task 집합
@@ -89,7 +89,7 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
 
 ## Tasks [/tasks]
 
-### task 목록을 가져옴 [GET]
+### task list 조회 [GET]
 
     등록된 Task를 목록으로 가져옴
 
@@ -111,10 +111,27 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
            }
         ]
 
-### task 삭제 [DELETE]
+### Task 생성 [POST]
 
-    등록된 Task 삭제
+    task를 세팅함
+    
 
++ Request (application/json)
+
+        {
+               "TASK" : [
+                   {
+                        * task 생성 정보
+                        "USER":
+                        "DESCRIPTION":
+                        "TASK_ID":
+                        "TASK_NAME":
+                        "권한":
+                        "공유설정":
+                   }
+               ]
+        }
+        
 + Response 200 (application/json)
 
         {
@@ -122,13 +139,13 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                    {
                        "RESULT" : ["OK"|"NOK"],
                        "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
+                   }
                ]
         }
 
 
-## Task status [/tasks/{task_name}/status]
+
+## Task [/tasks/{task_name}]
 
 ### task 상세 정보 [GET]
     해당 task의 상세 정보를 가져옴
@@ -150,7 +167,9 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                            "LAST-STD-IN" : "[EVENT_DATA]",
                            "LAST-STD-OUT" : "[EVENT_DATA]",
                            "LAST-STD-ERR" : "[EVENT_DATA]"
-                       }
+                       },
+                       "TASK_PROCESS": "ETL/ model ??"
+                       "SOURCE_CODE": ""
                    }
                ]
            }
@@ -183,16 +202,67 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
         }
 
-## Task queue stdin [/tasks/{task_name}/queue/stdin]
+### task 삭제 [DELETE]
 
-### queue 정보 받아옴 [GET]
+    등록된 Task 삭제
+    locking check ??
+    사용자 권한 check ??
 
-    해당 task의 모든 큐를 가져옴
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   },
+                   ...
+               ]
+        }
+
+## Task status [/tasks/{task_name}/status]
+
+### Task 상태 변경 [PUT]
+
+    task의 상태를 kill, pause, resume 을 통해 "ACT", "TRM" 시킴
+    
++ Request (application/json)
+
+        [
+            {
+               "CONFIGS" : [
+                   {
+                       "KEY" : "[변경하고자 하는 KEY]",
+                       "VALUE" : "[변경하고자 하는 VALUE]"
+                   },
+                   ...
+               ]
+           }
+        ]
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+
+
+
+## Task pipe [/tasks/{task_name}/pipe]
+
+### pipe 정보 받아옴 [GET]
+
+    해당 task의 모든 pipe를 가져옴
     
 + Response 200 (application/json)
 
         {
-               "QUEUES" : [
+               "PIPES" : [
                    {
                        "NAME" : "[NAME]",
                        "BROADCASTING STDIN" : [
@@ -208,7 +278,7 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
         }
 
-### queue에 데이터를 넣음 [PUT]
+### pipe에 데이터를 넣음 [PUT]
     
     해당 task의 stdin queue에 데이터를 넣음
 
@@ -230,11 +300,11 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
         }
 
 
-## Task queue delete [/tasks/{task_name}/queue]
-
-### queue 삭제 [DELETE]
+### pipe 삭제 [DELETE]
     
-    해당 task의 모든 queue 삭제
+    해당 task의 모든 pipe 삭제
+    locking check ??
+    사용자 권한 check ??
 
 + Response 200 (application/json)
 
@@ -247,73 +317,19 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
         }
 
-## schedule [/tasks/schedule]
+## Task pipe status [/tasks/{task_name}/pipe/status]
 
-### 모든 schedule 가져옴 [GET]
+### Pipe 상태 변경 [PUT]
 
-    등록된 모든 schedule을 가져옴
+    pipe의 상태를 pause, resume 을 통해 "ACT", "TRM" 시킴
     
 + Request (application/json)
 
-        ** optional
-        {
-               "TIME_FORMAT" : "[CRON_TYPE_TIME_FORMAT]",
-               "TASK" : "[TASKS (with comma separator)]"
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "SCHEDULES" : [
-                   {
-                       "MESSAGE": "test", 
-                       "TASK": "ps02", 
-                       "TIME_FORMAT": "*/1 * * * *"
-                   }
-               ]
-        }
-
-### schedule 설정 [POST]
-
-    schedule을 설정함
-    
-+ Request (application/json)
-
-        {
-               "SCHEDULES" : [
-                   {
-                       "MESSAGE": "test", 
-                       "TASK": "ps02", 
-                       "TIME_FORMAT": "*/1 * * * *"
-                   }
-               ]
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }     
-
-### schedule 삭제 [DELETE]
-
-    schedule을 삭제함
-    
-+ Request (application/json)
-
-        {
-               "SCHEDULES" : [
-                   {
-                       "TASK": "ps02", 
-                       "TIME_FORMAT": "*/1 * * * *"
-                   }
-               ]
-        }
+        [
+            {
+               "STATUS" : 
+           }
+        ]
         
 + Response 200 (application/json)
 
@@ -326,9 +342,11 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
         }
 
-## Flows [/tasks/flows]
 
-### flow 조회 [GET]
+
+## Flows [/flows]
+
+### flow list 조회 [GET]
 
     flow  정보를 받아옴
     
@@ -345,25 +363,30 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
 
         {
                "FLOWS" : {
-                   "BROAD" : [ 
-                       {
-                           "FROM" : "[TASK]",
-                           "TO" : "[TASK]"
-                       },
-                       ...
-                   ],
-                   "SHARE" : [ 
-                       {
-                           "FROM" : "[TASK]",
-                           "TO" : "[TASK]"
-                       },
-                       ...
-                   ]
+                    "FLOW_ID": "F123",
+                    "FLOW_NAME": "happy_flow",
+                    "FLOW_STATUS": "standby/running/complete/warning",
+                    "JOB_REGISTERED": "yes/ no"
+                    "FLOW_TYPE":
+                       "BROAD" : [ 
+                           {
+                               "FROM" : "[TASK]",
+                               "TO" : "[TASK]"
+                           },
+                           ...
+                       ],
+                       "SHARE" : [ 
+                           {
+                               "FROM" : "[TASK]",
+                               "TO" : "[TASK]"
+                           },
+                           ...
+                       ]
 
                }
         }
 
-### flow 설정 [POST]
+### flow 생성 [POST]
 
     flow를 세팅함
     
@@ -371,8 +394,13 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
 + Request (application/json)
 
         {
-               "FLOWS" : [
+               "FLOW" : [
                    {
+                        "USER":
+                        "DESCRIPTION":
+                        "FLOW_ID":
+                        "FLOW_NAME":
+                        
                        "FLOW_TYPE": ["SHARE"|"BROAD"], 
                        "FLOW_FROM": "[FLOW FROM TASK NAME]",
                        "FLOW_TO": "[FLOW TO TASK NAME]"
@@ -391,9 +419,79 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
            }
 
+
+## Flow [/flows/{flow_id}]
+
+### flow 상세 조회 [GET]
+
+    해당 flow 상세 정보를 받아옴
+    
++ Response 200 (application/json)
+
+        {
+               "FLOW" : {
+                    "FLOW_ID": "F123",
+                    "FLOW_NAME": "happy_flow",
+                    "FLOW_STATUS": "standby/running/complete/warning",
+                    "JOB_REGISTERED": "yes/ no"
+                    "FLOW_TYPE":
+                       "BROAD" : [ 
+                           {
+                               "FROM" : "[TASK]",
+                               "TO" : "[TASK]"
+                           },
+                           ...
+                       ],
+                       "SHARE" : [ 
+                           {
+                               "FROM" : "[TASK]",
+                               "TO" : "[TASK]"
+                           },
+                           ...
+                       ],
+                    
+                    "CREATE_TIME": "20180707111111", 
+                    "UPDATE_TIME": 
+                    "LAST_EXECUTE_TIME":
+                    "START_TIME":
+                    "END_TIME":
+                    "USER":
+                    ""
+               }
+        }
+
+### flow 수정 [PUT]
+
+    해당 flow를 수정함
+    
+
++ Request (application/json)
+
+        {
+               "FLOWS" : [
+                   {
+                       * flow 수정 사항
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+           }
+           
+
 ### flow 삭제 [DELETE]
 
-    flow를 삭제함
+    해당 flow를 삭제함
+    locking check ??
+    사용자 권한 check ??
 
 + Request (application/json)
 
@@ -417,6 +515,51 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                    }
                ]
         }
+
+## Flow status [/flows/{flow_id}/status]
+
+### flow 실행 제어 [PUT]
+
+    flow의 상태를 start/stop/run/kill 을 통해 "ACT", "TRM" 시킴
+    - run : flow 실행 (flow 즉시 실행)
+        - 이미 schedule에 의해 실행 중일 경우는 err 처리 후 err message 전송
+        - running 중 next schecule 발생시 다음 schedule 로 skip
+    - kill : flow 종료 (현재 진행 중인 flow의 모든 process 강제 종료)
+    
++ Request (application/json)
+
+        [
+            {
+               "STATUS" : pause/resume/execute
+           }
+        ]
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+        
+## Flow statistic [/flows/{flow_name}/statistic]
+
+### flow 통계정보 조회 [GET]
+
+    flow의 통계 정보를 받아옴
+    
++ Response 200 (application/json)
+
+        {
+               "FLOWS" : {
+                * flow 통계 정보
+                생성자, 실행자, 변경 history, 실행 결과 history 등
+               }
+        }
+
 
 ## Groups [/groups]
 
@@ -543,5 +686,154 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                        "MESSAGE" : "[MESSAGE_STRING]"             
                    },
                    ...
+               ]
+        }
+        
+## Jobs [/tasks/jobs]
+
+### job list 조회 [GET]
+
+    등록된 모든 job 목록 가져옴
+    
++ Request (application/json)
+
+        ** optional
+        {
+               "TIME_FORMAT" : "[CRON_TYPE_TIME_FORMAT]",
+               "TASK" : "[TASKS (with comma separator)]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "JOBS" : [
+                   {
+                       "MESSAGE": "test", 
+                       "TASK": "ps02", 
+                       "TIME_FORMAT": "*/1 * * * *"
+                   }
+               ]
+        }
+
+### job 생성 [POST]
+
+    job을 생성함, crontab에 등록
+    
++ Request (application/json)
+
+        {
+               "JOBS" : [
+                   {
+                       "MESSAGE": "test", 
+                       "TASK": "ps02", 
+                       "TIME_FORMAT": "*/1 * * * *"
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }     
+
+
+## Job [/tasks/jobs/{job_name}]
+
+### job 조회 [GET]
+
+    해당 job의 싱세 정보 가져옴
+    
++ Response 200 (application/json)
+
+        {
+            "JOB" : [
+                   {
+                       "JOB_ID": "aa", 
+                       "CREATE_TIME": "20180707111111", 
+                       "UPDATE_TIME": 
+                       "LAST_EXECUTE_TIME":
+                       "USER":
+                       "FLOW/TASK": "flow_name" , "task_list"
+                       "STATE": "enable / disable"
+                   }
+            ]
+        }
+
+### job 상태 변경 [PUT]
+    job 설정 정보 변경
+    
++ Request (application/json)
+           
+        {
+            * job 설정 정보 변경 : 시간, task, flow 등
+        }
+           
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   },
+                   ...
+               ]
+        }
+        
+### job 삭제 [DELETE]
+
+    등록되어있는 job을 삭제함
+    
++ Request (application/json)
+
+        {
+               "JOBS" : [
+                   {
+                       "TASK": "ps02", 
+                       "TIME_FORMAT": "*/1 * * * *"
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+
+## Job status [/tasks/jobs/{job_name}/status]
+
+
+### Job 실행 제어 [PUT]
+
+    job의 상태를 pause, resume 을 통해 "ACT", "TRM" 시킴
+    
++ Request (application/json)
+
+        [
+            {
+               "STATUS" : pause/resume/execute
+           }
+        ]
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
                ]
         }
