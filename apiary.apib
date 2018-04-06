@@ -1,80 +1,547 @@
 FORMAT: 1A
-HOST: http://polls.apiblueprint.org/
+HOST: http://192.168.100.100/wfe
 
-# bee2392
+# WFE (Work Flow Engine)
 
-Polls is a simple API allowing consumers to view polls and vote in them!!
+    표준입출력( Standard In / Out / Error )을 이용하여 다수의 프로세스를 연결
 
-## Questions Collection [/questions]
+- Task
+    - 하나의 프로세스를 의미
+    - 하나의 프로세스에서 하나 이상의 작업 수행 가능
+    - 모든 프로그래밍 언어 지원
+- Flow
+    - 프로세스와 프로세스를(Task) 연결하는 흐름
+    - Flow는 1:1, 1:n, n:1, n:n 형태를 모두 지원
+    - broad, shared 두 가지 타입을 가짐
+- Job
+    - crontab에 등록하는 일의 단위
+    - 다수의 Task와 다수의 Flow로 구성
+    - 단일 Task도 job이 될 수있음
+- Pipe
+    - Task간에 데이터가 공유되는 Queue
+    - 방향성 존재
+-  Group
+    - Task 집합
+    
+## Configs [/configs]
 
-### List All Questions [GET]
+### config 가져옴 [GET]
+
+WFE의 전반적인 설정 사항을 목록으로 가져옴
+
++ Request optional (application/json)
+
+        ** optional
+        [
+            {
+                "CHANGEABLE" : ["TRUE"|"FALSE"],
+                "KEY" : "[CONFIG_KEY]"
+            }
+        ]
+        
++ Response 200 (application/json)
+
+        [
+           {
+               "CONFIGS" : [
+                   {
+                       "KEY" : "[KEY_STRING]",
+                       "VALUE" : "[VALUE_STRING]",
+                       "CHANGEABLE" : ["Y"|"N"]
+                   },
+                   ...
+               ]
+           }
+        ]
+
+### config 변경 [PUT]
+
+저장된 설정 정보 변경
+
++ Request (application/json)
+
+        [
+            {
+               "CONFIGS" : [
+                   {
+                       "KEY" : "[변경하고자 하는 KEY]",
+                       "VALUE" : "[변경하고자 하는 VALUE]"
+                   },
+                   ...
+               ]
+           }
+        ]
 
 + Response 200 (application/json)
 
         [
             {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 2048
-                    }, {
-                        "choice": "Python",
-                        "votes": 1024
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 512
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 256
-                    }
-                ]
-            }
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   },
+                   ...
+               ]
+           }
+        ]
+        
+
+## Tasks [/tasks]
+
+### task 목록을 가져옴 [GET]
+
+    등록된 Task를 목록으로 가져옴
+
++ Response 200 (application/json)
+
+        [
+            {
+               "TASKS" : [
+                   {
+                       "STATUS": "[STATUS]", 
+                       "NAME": "[NAME]", 
+                       "ACT-TIME": "[ACT-TIME]", 
+                       "PID": [PID], 
+                       "ACT-STATUS": "[ACT-STATUS]", 
+                       "TYPE": "[TYPE]", 
+                       "ACT-COUNT": [ACT-COUNT]
+                   }
+               ]
+           }
         ]
 
-### Create a New Question [POST]
+### task 삭제 [DELETE]
 
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
+    등록된 Task 삭제
+
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   },
+                   ...
+               ]
+        }
+
+
+## Task status [/tasks/{task_name}/status]
+
+### task 상세 정보 [GET]
+    해당 task의 상세 정보를 가져옴
+    
++ Response 200 (application/json)
+
+        {
+               "STATUS" : [
+                   {
+                       "STATUS" : "[STATUS]", 
+                       "NAME" : "[NAME]", 
+                       "ACT-TIME" : "[ACT-TIME]", 
+                       "PID" : [PID], 
+                       "ACT-STATUS" : "[ACT-STATUS]", 
+                       "TYPE" : "[TYPE]", 
+                       "ACT-COUNT" : [ACT-COUNT],
+                       "COMMAND" : "[COMMAND]"
+                       "LAST-STATUS" : {
+                           "LAST-STD-IN" : "[EVENT_DATA]",
+                           "LAST-STD-OUT" : "[EVENT_DATA]",
+                           "LAST-STD-ERR" : "[EVENT_DATA]"
+                       }
+                   }
+               ]
+           }
+
+### task 상세 정보 변경 [PUT]
+    task의 상세 정보를 변경
+    
++ Request (application/json)
+
+        [
+            {
+               "CONFIGS" : [
+                   {
+                       "KEY" : "[변경하고자 하는 KEY]",
+                       "VALUE" : "[변경하고자 하는 VALUE]"
+                   },
+                   ...
+               ]
+           }
+        ]
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+
+## Task queue stdin [/tasks/{task_name}/queue/stdin]
+
+### queue 정보 받아옴 [GET]
+
+    해당 task의 모든 큐를 가져옴
+    
++ Response 200 (application/json)
+
+        {
+               "QUEUES" : [
+                   {
+                       "NAME" : "[NAME]",
+                       "BROADCASTING STDIN" : [
+                           ...
+                       ],
+                       "SHARING STDIN" : [
+                           ...
+                       ],
+                       "ERROR" : [
+                           ...
+                       ]
+                   }
+               ]
+        }
+
+### queue에 데이터를 넣음 [PUT]
+    
+    해당 task의 stdin queue에 데이터를 넣음
 
 + Request (application/json)
 
         {
-            "question": "Favourite programming language?",
-            "choices": [
-                "Swift",
-                "Python",
-                "Objective-C",
-                "Ruby"
-            ]
+               "MESSAGE" : "[MESSAGE_STRING]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
         }
 
-+ Response 201 (application/json)
 
-    + Headers
+## Task queue delete [/tasks/{task_name}/queue]
 
-            Location: /questions/2
+### queue 삭제 [DELETE]
+    
+    해당 task의 모든 queue 삭제
 
-    + Body
++ Response 200 (application/json)
 
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 0
-                    }
-                ]
-            }
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+
+## schedule [/tasks/schedule]
+
+### 모든 schedule 가져옴 [GET]
+
+    등록된 모든 schedule을 가져옴
+    
++ Request (application/json)
+
+        ** optional
+        {
+               "TIME_FORMAT" : "[CRON_TYPE_TIME_FORMAT]",
+               "TASK" : "[TASKS (with comma separator)]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "SCHEDULES" : [
+                   {
+                       "MESSAGE": "test", 
+                       "TASK": "ps02", 
+                       "TIME_FORMAT": "*/1 * * * *"
+                   }
+               ]
+        }
+
+### schedule 설정 [POST]
+
+    schedule을 설정함
+    
++ Request (application/json)
+
+        {
+               "SCHEDULES" : [
+                   {
+                       "MESSAGE": "test", 
+                       "TASK": "ps02", 
+                       "TIME_FORMAT": "*/1 * * * *"
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }     
+
+### schedule 삭제 [DELETE]
+
+    schedule을 삭제함
+    
++ Request (application/json)
+
+        {
+               "SCHEDULES" : [
+                   {
+                       "TASK": "ps02", 
+                       "TIME_FORMAT": "*/1 * * * *"
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+
+## Flows [/tasks/flows]
+
+### flow 조회 [GET]
+
+    flow  정보를 받아옴
+    
+
++ Request (application/json)
+
+        ** optional
+        {
+               "TYPE" : ["SHARE"|"BROAD"],
+               "TASK" : "[TASKS (with comma separator)]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "FLOWS" : {
+                   "BROAD" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ],
+                   "SHARE" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ]
+
+               }
+        }
+
+### flow 설정 [POST]
+
+    flow를 세팅함
+    
+
++ Request (application/json)
+
+        {
+               "FLOWS" : [
+                   {
+                       "FLOW_TYPE": ["SHARE"|"BROAD"], 
+                       "FLOW_FROM": "[FLOW FROM TASK NAME]",
+                       "FLOW_TO": "[FLOW TO TASK NAME]"
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+           }
+
+### flow 삭제 [DELETE]
+
+    flow를 삭제함
+
++ Request (application/json)
+
+        {
+               "FLOWS" : [
+                   {
+                       "FLOW_TYPE": ["SHARE"|"BROAD"], 
+                       "FLOW_FROM": "[FLOW FROM TASK NAME]",
+                       "FLOW_TO": "[FLOW TO TASK NAME]"
+                   }
+               ]
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   }
+               ]
+        }
+
+## Groups [/groups]
+
+### group 조회 [GET]
+
+    group 정보를 받아옴
+    
+
++ Request (application/json)
+
+        ** optional
+        {
+               "TYPE" : ["SHARE"|"BROAD"],
+               "TASK" : "[TASKS (with comma separator)]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "FLOWS" : {
+                   "BROAD" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ],
+                   "SHARE" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ]
+
+               }
+        }
+  
+### group 설정 [POST]
+
+    group을 설정함
+
++ Request (application/json)
+
+        ** optional
+        {
+               "TYPE" : ["SHARE"|"BROAD"],
+               "TASK" : "[TASKS (with comma separator)]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               "FLOWS" : {
+                   "BROAD" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ],
+                   "SHARE" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ]
+
+               }
+        }
+    
+
+
+### group 상태 변경 [PUT]
+    group에 속한 모든  task상태를 끄거나 킴
+    
++ Request (application/json)
+           
+        {
+            "STATUS" : ["ACT"|"TRM"]
+        }
+           
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   },
+                   ...
+               ]
+        }
+
+
+### group 삭제 [DELETE]
+    
+    group 삭제
+    
++ Request (application/json)
+           
+        {
+               "GROUPS" : [
+                   {
+                       "GROUP" : "[GROUP_NAME]"
+                   },
+                   ...
+                   OR
+                   {
+                       "GROUP" : "[GROUP_NAME]"
+                       "TASK" : "[TASKS (with comma separator)]"
+                   },
+                   ...
+               ]
+        }
+           
++ Response 200 (application/json)
+
+        {
+               "RESULTS" : [
+                   {
+                       "RESULT" : ["OK"|"NOK"],
+                       "MESSAGE" : "[MESSAGE_STRING]"             
+                   },
+                   ...
+               ]
+        }
