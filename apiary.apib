@@ -252,6 +252,25 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
         }
 
 
+## Task resource [/tasks/{task_name}/resource]
+
+### pid 기반 리소스 모니터링 [GET]
+
+    pid 기반 리소스 모니터링
+    
++ Response 200 (application/json)
+
+        {
+               "RESOURCE" : [
+                   {
+                    "CPU":,
+                    "MEMORY":,
+                    "DISK":,
+                    "NETWORK":
+                   }
+               ]
+        }
+
 
 ## Task pipe [/tasks/{task_name}/pipe]
 
@@ -689,7 +708,7 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
         }
         
-## Jobs [/tasks/jobs]
+## Jobs [/jobs]
 
 ### job list 조회 [GET]
 
@@ -743,7 +762,7 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
         }     
 
 
-## Job [/tasks/jobs/{job_name}]
+## Job [/jobs/{job_name}]
 
 ### job 조회 [GET]
 
@@ -812,7 +831,7 @@ WFE의 전반적인 설정 사항을 목록으로 가져옴
                ]
         }
 
-## Job status [/tasks/jobs/{job_name}/status]
+## Job status [/jobs/{job_name}/status]
 
 
 ### Job 실행 제어 [PUT]
