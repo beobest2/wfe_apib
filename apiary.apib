@@ -7,10 +7,9 @@ HOST: http://192.168.100.100/api/v1/
 
 - Workflow-Manager
     - 다수 또는 단일 workflow-engine을 관리
-    - Cli 와 REST api가 연결되는 통합 관리 모듈
+    - REST api가 연결되는 통합 관리 모듈
 - Workflow-Engine
     - 실제 task를 띄우고 flow를 관리하는 engine
-    - 한대의 노드(ip)에 하나의 engine이 동작
 - Task
     - 하나의 프로세스를 의미
     - 하나의 프로세스에서 하나 이상의 작업 수행 가능
@@ -21,7 +20,7 @@ HOST: http://192.168.100.100/api/v1/
     - 방향성 존재
 - Arrow
     - task간의 데이터 연결 방식을 정의하는 단위
-    - arrow는 1:1, 1:n, n:1, n:n 형태를 모두 지원
+    - arrow는 1:1, 1:n 형태 지원
     - broad, shared 두 가지 타입을 가짐
 - Flow
     - 프로세스와 프로세스를(Task) 연결하는 흐름
@@ -31,115 +30,118 @@ HOST: http://192.168.100.100/api/v1/
     - 다수의 Task와 Flow로 구성
     - 단일 Task도 job이 될 수있음
 -  Group
-    - Task 집합
+    - Flow 집합
 
 ## Engines [/engines]
 
 ### engine list 조회 - GET [GET]
 
 - 등록된 engine을 목록으로 가져옴
-        
+    - WF-Manager 에 저장된 엔진 IP, Port, engine_name(alias), id 정보
+    - engine_name, engine_id는 전체 시스템에서 각각 unique
+
 + Response 200 (application/json)
 
         
         {
-               "ENGINES" : [
-                   {
-                       "IP_ADDR" : "192.168.100.11",
-                       "ENGINE_ID" : "1"
-                       "STATUS" : "[VALID/INVALID/BUSY/WAIT]",
-                   },
+                {
+                    "IP_ADDR" : "192.168.100.11",
+                    "PORT" : "5000",
+                    "ENGINE_NAME": "test01",
+                    "ENGINE_ID" : "e1",
+                    "URL" : "~/engines/{engine_id}"
+                },
                    
-                   {
-                       "IP_ADDR" : "192.168.100.11",
-                       "ENGINE_ID" : "2"
-                       "STATUS" : "[VALID/INVALID/BUSY/WAIT]",
-                   },
-                   ...
-               ]
+                {
+                    "IP_ADDR" : "192.168.100.11",
+                    "PORT" : "5002",
+                    "ENGINE_NAME" : "test02",
+                    "ENGINE_ID" : "e2",
+                    "URL" : "~/engines/{engine_id}"
+                },
+                ...
         }
 
 ### engine 추가 - POST [POST]
 
 - engine을 추가함
+    - ip, port, engine_name 을 파라메터로 전송 
+    - manager에서 engine_id 생성하여 응답
+    - 실제 엔진이 동작하는지 IP, Port, ENGINE_NAME, ENGINE_ID 중복여부 체크 후 리스트에 추가
+
++ Request (application/json)
+
+        {
+            "IP_ADDR": "192.168.100.21",
+            "PORT" : "5050",
+            "ENGINE_NAME" : "test03"
+        }
+
+        
++ Response 200 (application/json)
+
+        {
+            "RESULT" : ["OK"|"NOK"],
+            "ENGINE_ID" : "e3",
+            "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"           
+        }
+
+### engine 삭제 - DELETE [DELETE]
+
+- engine을 삭제함
+ - 삭제하고자 하는 engine_id 전송
 
 
 + Request (application/json)
 
         {
-               "ENGINES" : [
-                   {
-                    "IP_ADDR": "192.168.100.21",
-                    "ENGINE_ID": "3",
-                   }
-               ]
+            "ENGINE_ID" : "e3"
         }
         
 + Response 200 (application/json)
 
         {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
+            "RESULT" : ["OK"|"NOK"],
+            "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"           
         }
-
-## Engine [/engine/{engine_id}]
+        
+## Engine [/engines/{engine_id}]
 
 ### engine 상세정보 조회 - GET [GET]
 
 - engine의 상세 정보 조회
+- 데이터는 각 엔진에서 가져옴
         
 + Response 200 (application/json)
 
         {
-               "ENGINE" : [
-                   {
-                        "IP_ADDR": "192.168.100.21",
-                        "ENGINE_ID": "3",
-                        "CPU": "23",
-                        "RAM" : "30",
-                        "MEMORY" : "11",
-                        "IO_WAIT" : "1"
-                   }
-               ]
+            "IP_ADDR": "192.168.100.21",
+            "PORT" : "5050",
+            "ENGINE_ID": "e3",
+            "STATUS" : "[VALID / INVALID / WAIT_RETRY]"
+            "CPU": "23",
+            "RAM" : "30",
+            "MEMORY" : "11",
+            "IO_WAIT" : "1"
         }
 
-### engine 정보 변경 - PUT [PUT]
+## Engine statistic [/engines/{engine_id}/statistic]
 
-- engine의 정보 변경
-- ip 주소만 변경 가능
+### Engine 통계정보 조회 - GET [GET]
 
-        
+- Engine의 통계 정보를 받아옴 (global_queue)
+    
 + Response 200 (application/json)
 
         {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
+    
+                * engine 통계 정보
+                    변경 history, 실행 결과 history 등
+            "CHANGE_HISTORY" : "",
+            "RESULT_HISTORY" : "",
+            ...
+            
         }
-        
-### engine 삭제 - DELETE [DELETE]
-
-- engine을 삭제함
-
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-        
 
             
 ## Configs [/configs]
@@ -154,24 +156,23 @@ HOST: http://192.168.100.100/api/v1/
 + Request optional (application/json)
 
         ** optional
-        
         {
-                "CHANGEABLE" : ["TRUE"|"FALSE"],
-                "KEY" : "[CONFIG_KEY]"
+            "CHANGEABLE" : ["TRUE"|"FALSE"],
+            "KEY" : "[CONFIG_KEY]"
         }
         
 + Response 200 (application/json)
 
-        
         {
-               "CONFIGS" : [
-                   {
-                       "KEY" : "[KEY_STRING]",
-                       "VALUE" : "[VALUE_STRING]",
-                       "CHANGEABLE" : ["Y"|"N"]
-                   },
-                   ...
-               ]
+
+           {
+               "KEY" : "[KEY_STRING]",
+               "VALUE" : "[VALUE_STRING]",
+               "CHANGEABLE" : ["Y"|"N"]
+           }
+           ,
+           ...
+           
         }
         
 
@@ -180,871 +181,106 @@ HOST: http://192.168.100.100/api/v1/
 - 저장된 설정 정보 변경
 - CHANGEABLE이 TRUE인 설정만 변경 가능
 
-+ Request (application/json)
-
-        
-        {
-            "CONFIGS" : [
-                   {
-                       "KEY" : "[변경하고자 하는 KEY]",
-                       "VALUE" : "[변경하고자 하는 VALUE]"
-                   },
-                   ...
-            ]
-        }
-        
-
-+ Response 200 (application/json)
-
-        
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
-               ]
-        }
-        
-        
-
-## Tasks [/tasks]
-
-### task list 조회 - GET [GET]
-- 등록된 Task를 목록으로 가져옴
-- 옵션을 통해 특정 키나 특정 엔진의 task 리스트만 조회 가능
-- task의 메타데이터 정보만 조회됨
-
-    
-+ Request optional (application/json)
-
-        ** optional
-        
-        {
-                "CHANGEABLE" : ["TRUE"|"FALSE"],
-                "ENGINE_ID" : "1"
-                "KEY" : "[KEY]"
-        }
-        
-+ Response 200 (application/json)
-
-        
-        {
-               "TASKS" : [
-                   {
-                        "ENGINE_ID": "ENGINE_ID",
-                        "TASK_ID": "TASK_ID",
-                        "TASK_NAME" : "TASK_NAME"
-                        "TASK_URL" : "{engine_ip}/api/vi/{task_id}"
-                   }
-               ]
-        }
-        
-
-### Task 생성 - POST [POST]
-
-- task를 생성함
-- Task option에 daemon여부 설정 가능
-    - daemon이 아닌 경우 상시 동작하는 프로세스 
-
 
 + Request (application/json)
 
-        {
-               "TASK" : [
-                   {
-                        * task 생성 정보
-                        "ENGINE_ID": "ENGINE_ID"
-                        "TASK_ID":
-                        "TASK_NAME":
-                        "TYPE":
-                        "COMMAND":
-                        "DESCRIPTION":
-                   }
-               ]
-        }
+           {
+               "KEY" : "[변경하고자 하는 KEY]",
+               "VALUE" : "[변경하고자 하는 VALUE]"
+           }
         
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-
-
-## Task [/tasks/{task_id}]
-
-### task 상세 정보 - GET [GET]
-
-- 해당 task의 상세 정보를 가져옴
 
 + Response 200 (application/json)
 
-        {
-               "TASK" : [
-                   {
-                        "ENGINE_ID" : "[ENGINE_ID]",
-                        "TASK_ID" : "[ID]", 
-                        "TASK_NAME" : "[NAME]",
-                        "TASK_TYPE": "[PROCESS]",
-                        "DAEMON" : "[True]",
-                        "PID": "PID",
-                        "STATUS": "STATUS",
-                        "JOB_REGISTERED": "yes/ no",
-                        
-                        "ACT-TIME" : "[ACT-TIME]", 
-                        "ACT-STATUS" : "[ACT-STATUS]", 
-                        "ACT-COUNT" : "[ACT-COUNT]",
-                        "COMMAND" : "[COMMAND]",
-                        
-                        "CREATE_TIME": "20180707111111", 
-                        "UPDATE_TIME": 
-                        "LAST_EXECUTE_TIME":
-                        "START_TIME":
-                        "END_TIME":
-                        "USER":
-                        
-                        "LAST-STATUS" : {
-                           "LAST-STD-IN" : "[EVENT_DATA]",
-                           "LAST-STD-OUT" : "[EVENT_DATA]",
-                           "LAST-STD-ERR" : "[EVENT_DATA]"
-                       },
-                       "TASK_PROCESS": "ETL/ model ??"
-                       "SOURCE_CODE": ""
-                   }
-               ]
+        
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"           
            }
 
-### task 상세 정보 변경 - PUT [PUT]
-- task의 상세 정보를 변경
-
-    
-+ Request (application/json)
-
-        [
-            {
-               "CONFIGS" : [
-                   {
-                       "KEY" : "[변경하고자 하는 KEY]",
-                       "VALUE" : "[변경하고자 하는 VALUE]"
-                   },
-                   ...
-               ]
-           }
-        ]
         
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-### task 삭제 - DELETE [DELETE]
-
-- 등록된 Task 삭제
-- locking check
-
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
-               ]
-        }
-
-## Task status [/tasks/{task_id}/status]
-
-### Task 상태 변경 - PUT [PUT]
-
-- task의 상태를 kill, pause, resume 을 통해 "ACT", "TRM" 시킴
-- locking check
-    
-+ Request (application/json)
-
-        [
-            {
-               "CONFIGS" : [
-                   {
-                       "KEY" : "[변경하고자 하는 KEY]",
-                       "VALUE" : "[변경하고자 하는 VALUE]"
-                   }
-               ]
-           }
-        ]
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-
-## Task resource [/tasks/{task_id}/resource]
-
-### task 기반 리소스 모니터링 - GET [GET]
-
-- task_id 기반 리소스 모니터링
-    
-+ Response 200 (application/json)
-
-        {
-               "RESOURCE" : [
-                   {
-                    "ENGINE_ID": "ENGINE_ID",
-                    "CPU":,
-                    "MEMORY":,
-                    "DISK":,
-                    "NETWORK":
-                   }
-               ]
-        }
-
-
-## Task queue [/tasks/{task_id}/queue]
-
-### queue 정보 받아옴 - GET [GET]
-
-- 해당 task의 모든 queue 정보를 가져옴
-    
-+ Response 200 (application/json)
-
-        {
-               "QUEUE" : [
-                   {
-                        "ENGINE_ID" : "ENGINE_ID",
-                        "TASK_ID" : "TASK_ID",
-                        "TASK_URL" : "{engine_ip}/tasks/{task_id}",
-                        
-                        "BROADCASTING STDIN" : [
-                           ...
-                        ],
-                        "SHARING STDIN" : [
-                           ...
-                        ],
-                        "ERROR" : [
-                           ...
-                        ]
-                   }
-               ]
-        }
-
-### queue에 데이터를 넣음 - PUT [PUT]
-    
-- 해당 task의 stdin queue에 데이터를 넣음
-
-+ Request (application/json)
-
-        {
-               "MESSAGE" : "[MESSAGE_STRING]"
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-## Arrows [/arrows]
-
-### arrow list 조회 - GET [GET]
-
-- 등록된 arrow의 목록 조회
-
-+ Request optional (application/json)
-
-        ** optional
-        
-        {
-                "CHANGEABLE" : ["TRUE"|"FALSE"],
-                "ENGINE_ID" : "1"
-                "KEY" : "[KEY]"
-        }
-        
-+ Response 200 (application/json)
-
-        
-        {
-               "ARROWS" : [
-                   {
-                        "ENGINE_ID": "ENGINE_ID",
-                        "ARROW_ID": "ARROW_ID",
-                        "ARROW_NAME" : "ARROW_NAME"
-                        "ARROW_URL" : "{engine_ip}/api/vi/{arrow_id}"
-                   }
-               ]
-        }
-
-### arrow 등록 - POST [POST]
-
-- 새로운 arrow를 등록함
-
-+ Request (application/json)
-
-        {
-               "ARROWS" : [
-                   {
-                        * arrow 생성 정보
-                        "ENGINE_ID": "ENGINE_ID"
-                        "ARROW_ID":
-                        "ARROW_NAME":
-                        
-                       "ARROW_TYPE": ["SHARE"|"BROAD"], 
-                       "ARROW_FROM": "[FLOW FROM TASK NAME]",
-                       "ARROW_TO": "[FLOW TO TASK NAME]"    
-                   }
-               ]
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-        
-
-## Arrow [/arrows/{arrow_id}]
-
-### arrow 상세 조회 - GET [GET]
-
-+ Response 200 (application/json)
-
-        {
-               "ARROW" : [
-                   {
-                        "ENGINE_ID" : "[ENGINE_ID]",
-                        "ARROW_ID" : "[ID]", 
-                        "ARROW_NAME" : "[NAME]",
-                        "ARROW_TYPE": "[BROAD/SHARED]",
-                        
-                        "ARROW_TYPE":
-                       "BROAD" : [ 
-                           {
-                               "FROM" : "[TASK]",
-                               "TO" : "[TASK]"
-                           },
-                           ...
-                       ],
-                       "SHARE" : [ 
-                           {
-                               "FROM" : "[TASK]",
-                               "TO" : "[TASK]"
-                           },
-                           ...
-                       ],
-                       
-                        "ACT-TIME" : "[ACT-TIME]", 
-                        "ACT-STATUS" : "[ACT-STATUS]", 
-                        "ACT-COUNT" : "[ACT-COUNT]",
-                        "COMMAND" : "[COMMAND]",
-                        
-                        "CREATE_TIME": "20180707111111", 
-                        "UPDATE_TIME": 
-                        "LAST_EXECUTE_TIME":
-                        "START_TIME":
-                        "END_TIME":
-                        "USER":
-                        
-                        "LAST-STATUS" : {
-                           "LAST-STD-IN" : "[EVENT_DATA]",
-                           "LAST-STD-OUT" : "[EVENT_DATA]",
-                           "LAST-STD-ERR" : "[EVENT_DATA]"
-                       }
-                   }
-               ]
-           }
-
-
-### arrow 정보 수정 - PUT [PUT]
-
-- 해당 arrow를 수정함
-- 수정 가능 사항만 수정 가능
-    
-
-+ Request (application/json)
-
-        {
-               "ARROW" : [
-                   {
-                       * arrow 수정 사항
-                       "KEY" : "[변경하고자 하는 KEY]",
-                       "VALUE" : "[변경하고자 하는 VALUE]"
-                   }
-               ]
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-           }
-           
-
-### arrow 삭제 - DELETE [DELETE]
-
-- 해당 arrow 등록 정보를 삭제함
-- locking check
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-
-
-## Flows [/flows]
-
-### flow list 조회 - GET [GET]
-
-- 등록된 flow 목록을 받아옴
-    
-
-+ Request (application/json)
-
-        ** optional
-        {
-                "ENGINE_ID" : ""
-               "TYPE" : ["SHARE"|"BROAD"],
-               "TASK" : "[TASKS (with comma separator)]"
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "FLOWS" : {
-                    "ENGINE_ID": "ENGINE_ID",
-                    "FLOW_ID": "F123",
-                    "FLOW_NAME": "happy_flow",
-
-               }
-        }
-
-### flow 생성 - POST [POST]
-
-- flow를 세팅함
-    
-
-+ Request (application/json)
-
-        {
-               "FLOWS" : [
-                   {
-                        "ENGINE_ID": "ENGINE_ID",
-                        "DESCRIPTION": "taskA, arrowA, taskB, arrowB, taskC",
-                        "FLOW_ID":
-                        "FLOW_NAME":
-
-                   }
-               ]
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-           }
-
-
-## Flow [/flows/{flow_id}]
-
-### flow 상세 조회 - GET [GET]
-
-- 해당 flow 상세 정보를 받아옴
-    
-+ Response 200 (application/json)
-
-        {
-               "FLOW" : {
-                    "ENGINE_ID": "ENGINE_ID",
-                    "FLOW_ID" : "FLOW_ID,
-                    "FLOW_NAME" :  "FLOW_NAME",
-                    "FLOW_STATUS": "standby/running/complete/warning",
-                    "JOB_REGISTERED": "yes/ no",
-                    
-                    "FLOW_STRUCTURE" :,
-                        "TASKS" : [
-                            taskA [task_level1],
-                            taskB [task_level2],
-                            taskC [task_level3],
-                            
-                        ],
-                        
-                        "ARROWS" : [
-                            arrowA,
-                            arrowB,
-                        ],
-                    
-                        "CREATE_TIME": "20180707111111", 
-                        "UPDATE_TIME": 
-                        "LAST_EXECUTE_TIME":
-                        "START_TIME":
-                        "END_TIME":
-                        "USER":
-                    ""
-               }
-        }
-
-### flow 수정 - PUT [PUT]
-
-- 해당 flow를 수정함
-- 수정 가능 사항만 수정 가능
-    
-
-+ Request (application/json)
-
-        {
-               "FLOW" : [
-                   {
-                       * flow 수정 사항
-                       "KEY" : "[변경하고자 하는 KEY]",
-                       "VALUE" : "[변경하고자 하는 VALUE]"
-                   }
-               ]
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-           }
-           
-
-### flow 삭제 - DELETE [DELETE]
-
-- 해당 flow 등록 정보를 삭제함
-- flow에 속한 task와 arrow는 삭제되지 않음
-- locking check
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-## Flow status [/flows/{flow_id}/status]
-
-### flow 실행 제어 - PUT [PUT]
-
-- locking check
-- 실행 제어 단계 정의 ???
-    - flow의 상태를 start/stop/run/kill 을 통해 "ACT", "TRM" 시킴
-    - run : flow 실행 (flow 즉시 실행)
-    - 이미 schedule에 의해 실행 중일 경우는 err 처리 후 err message 전송
-    - running 중 next schecule 발생시 다음 schedule 로 skip
-    - kill : flow 종료 (현재 진행 중인 flow의 모든 process 강제 종료)
-    
-+ Request (application/json)
-
-        [
-            {
-               "STATUS" : "pause/resume/execute"
-           }
-        ]
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-        
-## Flow statistic [/flows/{flow_id}/statistic]
-
-### flow 통계정보 조회 - GET [GET]
-
-- flow의 통계 정보를 받아옴
-    
-+ Response 200 (application/json)
-
-        {
-               "FLOWS" : {
-                * flow 통계 정보
-                생성자, 실행자, 변경 history, 실행 결과 history 등
-               }
-        }
-
-
-## Groups [/groups]
-
-### group 조회 - GET [GET]
-
-- 등록된 group 목록을 받아옴
-- 옵션에 task_id를 포함하면 해당 task가 포함된 group만 조회됨
-    
-
-+ Request (application/json)
-
-        ** optional
-        {
-               "TASK" : "[TASKS (with comma separator)]"
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "GROUPS" : [
-               
-                    {
-                        "ENGINE_ID" : "",
-                        "GROUP_ID" : "",
-                        "GROUP_NAME" : "",
-                    }
-                    
-                    ...
-               ]
-        }
-  
-### group 생성 - POST [POST]
-
-- group을 생성함
-
-+ Request (application/json)
-
-        {
-               "ENIGINE_ID": "",
-               "GROUP_NAME": "",
-               "TASKS" : "a,b,c",
-        }
-        
-+ Response 200 (application/json)
-
-        {
-                "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
-               ]
-        }
-    
-## Group [/groups/{group_id}]
-
-### group 상세 정보 조회 - GET [GET]
-
-    
-+ Response 200 (application/json)
-
-        {
-               "GROUP" : {
-                    "ENGINE_ID" : "",
-                        "GROUP_ID" : "",
-                        "GROUP_NAME" : "",
-                         "TASKS" : [
-                                taskA,
-                                taskB,
-                                ...
-                         ]
-               }
-        }
-        
-
-### group 정보 변경 - PUT [PUT]
-
-+ Request (application/json)
-
-        {
-               "GROUP" : [
-                   {
-                       * group 수정 사항
-                       "KEY" : "[변경하고자 하는 KEY]",
-                       "VALUE" : "[변경하고자 하는 VALUE]"
-                   }
-               ]
-        }
-        
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-           }
-           
-
-### group 삭제 - DELETE [DELETE]
-    
-- group 삭제
-           
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
-               ]
-        }
-        
-## Group status [/groups/{group_id}/status]
-
-### group 상태 변경 - PUT [PUT]
-
-- group에 속한 모든  task상태를 끄거나 킴
-    
-+ Request (application/json)
-           
-        {
-            "STATUS" : ["ACT"|"TRM"]
-        }
-           
-+ Response 200 (application/json)
-
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
-               ]
-        }
-
-        
+ 
 ## Jobs [/jobs]
 
 ### job list 조회 - GET [GET]
 
 - 등록된 모든 job 목록 가져옴
-- TASK나 FLOW 옵션을 통해 해당 FLOW나 TASK가 속한 JOB만 조회 가능
+- engine_id 옵션을 통해 해당 engine에 속한 JOB만 조회 가능
     
 + Request (application/json)
 
         ** optional
         {
-               "TIME_FORMAT" : "[CRON_TYPE_TIME_FORMAT]",
-               "TASK" : "[TASKS (with comma separator)]",
-               "FLOW" : "[FLOWS (with comma separator)]",
-               "ENGINE_ID" : ""
+               "ENGINE_ID" : "e1"
         }
         
 + Response 200 (application/json)
 
         {
-               "JOBS" : [
-                   {
-                       "MESSAGE": "test", 
-                       "TASK": "ps02", 
-                       "TIME_FORMAT": "*/1 * * * *"
-                   }
-               ]
+           
+               {
+                   "ENGINE_ID": "e1",
+                   
+                   "JOB_ID": "j1",
+                   "JOB_NAME" : "etl_job01",
+                   
+                   "CREATE_TIME": "20180707111111", 
+                   "UPDATE_TIME": 
+                   "LAST_EXECUTE_TIME":
+                   
+                   "FLOWS": {
+                        {
+                            "FLOW_ID" : "e1f1"
+                        }
+                        ,
+                        {
+                            "FLOW_ID" : "e1f2",
+                        }
+                    }
+                   "STATE": "[ENABLE / DISABLE]",
+                   
+                   "TIME_FORMAT": "*/1 * * * *",
+                   "CALL_BACK_URL" : "192.168.123.123"
+               },
+               ...
+               
         }
 
 ### job 생성 - POST [POST]
 
-- job을 생성함, crontab에 등록
+- job을 생성함, crontab에 등록됨
+- job이 등록될 engine, job_name, job에 속하는 flow 리스트 입력
+    
     
 + Request (application/json)
 
         {
-               "JOBS" : [
-                   {
-                        "ENGINE_ID": "",
-                       "MESSAGE": "test", 
-                       "TASK": "ps02", 
-                       "TIME_FORMAT": "*/1 * * * *"
-                   }
-               ]
+                "ENGINE_ID": "e1",
+                "FLOWS": "[e1f1, e1f4]", 
+                "TIME_FORMAT": "*/1 * * * *"
         }
+        
         
 + Response 200 (application/json)
 
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }     
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "JOB_ID" : "e1j1"
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
+           }    
 
+### job 삭제 - DELETE [DELETE]
 
-## Job [/jobs/{job_id}]
-
-### job 조회 - GET [GET]
-
-- 해당 job의 싱세 정보 가져옴
-    
+- 등록되어있는 job을 삭제함
+        
 + Response 200 (application/json)
 
-        {
-            "JOB" : [
-                   {
-                       "ENGINE_ID": "",
-                       "JOB_ID": "aa", 
-                       "CREATE_TIME": "20180707111111", 
-                       "UPDATE_TIME": 
-                       "LAST_EXECUTE_TIME":
-                       "USER":
-                       "FLOW/TASK": "flow_name" or "task_list"
-                       "STATE": "enable / disable"
-                   }
-            ]
-        }
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
+           }  
+        
+## Job [/jobs/{job_id}]
 
 ### job 상태 변경 - PUT [PUT]
 - job 설정 정보 변경
@@ -1052,63 +288,41 @@ HOST: http://192.168.100.100/api/v1/
 + Request (application/json)
            
         {
-            * job 설정 정보 변경 : 시간, task, flow 등
+            * job 설정 정보 변경 : 시간, flow 등
+            "TIME_FORMAT": "*/1 * * * *",
         }
            
 + Response 200 (application/json)
 
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   },
-                   ...
-               ]
-        }
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
+           }  
         
-### job 삭제 - DELETE [DELETE]
 
-- 등록되어있는 job을 삭제함
-        
-+ Response 200 (application/json)
 
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
-
-## Job status [/jobs/{job_id}/status]
+## Job control [/jobs/{job_id}/control]
 
 
 ### Job 실행 제어 - PUT [PUT]
 
 - job의 상태를 pause, resume 을 통해 "ACT", "TRM" 시킴
+ 
     
 + Request (application/json)
 
-        [
             {
-               "STATUS" : pause/resume/execute
-           }
-        ]
+               "STATUS" : "[pause | resume | execute]"
+            }
         
 + Response 200 (application/json)
 
-        {
-               "RESULTS" : [
-                   {
-                       "RESULT" : ["OK"|"NOK"],
-                       "MESSAGE" : "[MESSAGE_STRING]"             
-                   }
-               ]
-        }
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
+           }  
 
-## Jobs statistic [/jobs/{node_id}/{job_id}/statistic]
+## Jobs statistic [/jobs/{job_id}/statistic]
 
 ### Job 통계정보 조회 - GET [GET]
 
@@ -1122,3 +336,599 @@ HOST: http://192.168.100.100/api/v1/
                 생성자, 실행자, 변경 history, 실행 결과 history 등
                }
         }
+
+
+## Groups [/groups]
+
+### group 조회 - GET [GET]
+
+- 등록된 group 목록을 받아옴
+- 옵션에 engine_id를 주어 해당 engine에 등록된 그룹만 조회 가능   
+
++ Request (application/json)
+
+        ** optional
+        {
+               "ENGINE_ID" : "e1"
+        }
+        
++ Response 200 (application/json)
+
+        {
+               
+                {
+                    "ENGINE_ID" : "e1",
+                    "GROUP_ID" : "g1",
+                    "GROUP_NAME" : "etl_group01",
+                    
+                    "FLOWS" : [
+                            flowA,
+                            flowB,
+                            ...
+                    ]
+                },
+                
+                ...
+        }
+  
+### group 생성 - POST [POST]
+
+- group을 생성함
+    - group을 생성할 engine_id, group_name, group에 속할 flow리스트 입력
+
++ Request (application/json)
+
+        {
+               "ENIGINE_ID": "e1",
+               "GROUP_NAME": "etl_group01",
+               "flows" : "[e1f1, e1f2, e1f3]",
+        }
+        
+
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+    
+## Group [/groups/{group_id}]
+        
+
+### group 정보 변경 - PUT [PUT]
+
++ Request (application/json)
+
+        {
+
+               {
+                   * group 수정 사항
+                   "KEY" : "[변경하고자 하는 KEY]",
+                   "VALUE" : "[변경하고자 하는 VALUE]"
+               }
+        }
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+           
+
+### group 삭제 - DELETE [DELETE]
+    
+- group  둥록 정보 삭제
+           
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+        
+## Group control [/groups/{group_id}/control]
+
+### group 상태 변경 - PUT [PUT]
+
+- group에 속한 모든  flow의 상태를 끄거나 킴
+    
++ Request (application/json)
+        
+       
+            {
+                 "STATUS" : "[ pause | resume | execute ]"
+            }
+           
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+
+
+## Flows [/flows]
+
+### flow list 조회 - GET [GET]
+
+- 등록된 flow 목록을 받아옴
+- engine 정보를 옵션으로 주어 해당 engine의 flow 목록만 조회 가능
+    
+
++ Request (application/json)
+
+        ** optional
+        {
+                "ENGINE_ID" : "e1"
+        }
+        
++ Response 200 (application/json)
+
+        {
+                {
+                    "ENGINE_ID": "e1",
+                    "FLOW_ID": "e1f1",
+                    "FLOW_NAME": "happy_flow",
+                    "FLOW_STATUS": "[standby | running | complete | warning]",
+                    "JOB_REGISTERED": "[True | False]",
+                    
+                    "FLOW_STRUCTURE" :
+                    {
+                        "TASKS" : [
+                            taskA [task_level1],
+                            taskB [task_level2],
+                            taskC [task_level3],
+                            
+                        ],
+                        
+                        "ARROWS" : [
+                            arrowA,
+                            arrowB,
+                        ],
+                    },
+                    "CREATE_TIME": "20180707111111", 
+                    "UPDATE_TIME": 
+                    "LAST_EXECUTE_TIME":
+                    "START_TIME":
+                    "END_TIME":
+                },
+            ...
+        }
+
+### flow 생성 - POST [POST]
+
+- flow를 생성함
+    - flow를 생성할 engine을 지정
+    - flow_name을 입력하면 flow가 생성되고 flow_id반환
+    
+
++ Request (application/json)
+
+        {
+                "ENGINE_ID": "e1",
+                "FLOW_NAME": "transform_flow"
+        }
+
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "FLOW_ID" : "e1f2",
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+### flow 삭제 - DELETE [DELETE]
+
+- 해당 flow 등록 정보를 삭제함
+- flow에 속한 task와 arrow도 함께 삭제됨
+- locking check
+    - flow가 현재 동작중인지 체크
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+        
+## Flow [/flows/{flow_id}]
+
+### flow 수정 - PUT [PUT]
+
+- 해당 flow를 수정함
+- 수정 가능 사항만 수정 가능
+    
+
++ Request (application/json)
+
+           {
+               * flow 수정 사항
+               "KEY" : "[변경하고자 하는 KEY]",
+               "VALUE" : "[변경하고자 하는 VALUE]"
+           }
+
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+           
+
+
+
+## Flow control [/flows/{flow_id}/control]
+
+### flow 실행 제어 - PUT [PUT]
+
+- 실행 제어 단계 정의 ???
+    - flow의 상태를 start/stop/run/kill 을 통해 "ACT", "TRM" 시킴
+    - run : flow 실행 (flow 즉시 실행)
+    - 이미 schedule에 의해 실행 중일 경우는 err 처리 후 err message 전송
+    - running 중 next schecule 발생시 다음 schedule 로 skip
+    - kill : flow 종료 (현재 진행 중인 flow의 모든 process 강제 종료)
+    
+    
++ Request (application/json)
+        
+       
+            {
+                 "STATUS" : "[ pause | resume | execute ]"
+            }
+            
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+
+   
+## Tasks [/tasks]
+
+### task list 조회 - GET [GET]
+- 등록된 Task 정보를 목록으로 가져옴
+- 옵션을 통해 특정 키나 특정 엔진의 task 리스트만 조회 가능
+- task 의 소속 engine, flow 정보, task의 level정보 함께 조회(flow의 단계)
+
+    
++ Request optional (application/json)
+
+        ** optional
+        {
+            "ENGINE_ID" : "e1",
+            "KEY" : "[KEY]"
+        }
+        
++ Response 200 (application/json)
+
+        {
+
+           {
+                "ENGINE_ID": "ENGINE_ID",
+                "ENGINE_NAME" : "ENGINE_NAME",
+                "ENGINE_URL" : "~/api/v1/{engine_id}",
+                
+                "FLOW_ID" : "FLOW_ID",
+                "FLOW_NAME" : "FLOW_NAME",
+                "FLOW_URL" : "~/api/v1/{flow_id}",
+                
+                "TASK_ID": "TASK_ID",
+                "TASK_NAME" : "TASK_NAME",
+                "TASK_URL" : "~/api/v1/{task_id}",
+                
+                "TASK_LEVEL" : "2",
+                "DAEMON" : "[True | False]",
+                "PID": "PID",
+                "STATUS": "[ACTIVE | INACTIVE]",
+                "JOB_REGISTERED": "[True | False]",
+                
+                "ACT-TIME" : "[ACT-TIME]",
+                "ACT-STATUS" : "[ACT-STATUS]", 
+                "ACT-COUNT" : "[ACT-COUNT]",
+                "COMMAND" : "[COMMAND]",
+                
+                "CREATE_TIME": "20180707111111", 
+                "UPDATE_TIME": "20180707111112", 
+                "LAST_EXECUTE_TIME": "20180707111113", 
+                "START_TIME": "20180707111113", 
+                "END_TIME": "20180707111114", 
+                
+                "LAST-STATUS" : {
+                   "LAST-STD-IN" : "[EVENT_DATA]",
+                   "LAST-STD-OUT" : "[EVENT_DATA]",
+                   "LAST-STD-ERR" : "[EVENT_DATA]"
+                }
+           },
+           ...
+
+        }
+        
+
+### Task 생성 - POST [POST]
+
+- task를 생성함
+    - 생성할 task의 engine, flow의 위치, task의 이름 지정
+    - 생성된 task의 id 반환
+- Task option에 daemon여부 설정 가능
+    - Daemon인 경우 상시 동작하는 프로세스
+- task name 은 같은 engine내에서는 중복 불가
+
+
++ Request (application/json)
+
+           {
+                "ENGINE_ID": "e1",
+                "FLOW_ID" : "e1f1",
+                "TASK_NAME": "task01",
+                "DAEMON" : "True",
+                "TYPE": "process",
+                "COMMAND": "python parser.py arg1",
+                "DESCRIPTION": "this is parser"
+           }
+        
+        
++ Response 200 (application/json)
+
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "TASK_ID" : "e1f1t1"
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+
+
+## Task [/tasks/{task_id}]
+
+### task 상세 정보 변경 - PUT [PUT]
+- task의 상세 정보를 변경
+
++ Request (application/json)
+
+        {
+           {
+               "KEY" : "DAEMON",
+               "VALUE" : "False"
+           },
+           ...
+        }
+
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+
+### task 삭제 - DELETE [DELETE]
+
+- 등록된 Task 삭제
+- locking check
+    - 현재 task가 속한 flow가 동작중인지 확인
+
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+## Task control [/tasks/{task_id}/control]
+
+### Task 제어 - PUT [PUT]
+
+- ** version 1에서는 task 단위 제어는 지원하지 않음
+- task의 상태를 kill, pause, resume 을 통해 "ACT", "TRM" 시킴
+    
++ Request (application/json)
+
+    
+           {
+               "KEY" : "[변경하고자 하는 KEY]",
+               "VALUE" : "[변경하고자 하는 VALUE]"
+           }
+        
+        
++ Response 200 (application/json)
+
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+
+## Task resource [/tasks/{task_id}/resource]
+
+### task 기반 리소스 모니터링 - GET [GET]
+
+- task_id 기반 리소스 모니터링
+    
++ Response 200 (application/json)
+
+           {
+                "ENGINE_ID": "e1",
+                "FLOW_ID" : "e1f2",
+                "TASK_ID" : "e1f2t3",
+                
+                "CPU": "20",
+                "MEMORY": "10",
+                "DISK": "25",
+                "NETWORK": "111"
+           }
+        
+
+
+## Task queue [/tasks/{task_id}/queue]
+
+### queue 정보 받아옴 - GET [GET]
+
+- 해당 task의 모든 queue 정보를 가져옴
+    
++ Response 200 (application/json)
+
+           {
+                "ENGINE_ID" : "e1",
+                "FLOW_ID" : "e1f2",
+                "TASK_ID" : "e1f2t3",
+                "TASK_URL" : "~/api/v1/tasks/{task_id}",
+                
+                "QUEUE_TYPE" :
+                    {
+                    "BROADCASTING STDIN" : [
+                       ...
+                    ],
+                    "SHARING STDIN" : [
+                       ...
+                    ],
+                    "ERROR" : [
+                       ...
+                    ]
+                }
+           }
+
+### queue에 데이터를 넣음 - PUT [PUT]
+    
+- 해당 task의 stdin queue에 데이터를 넣음
+
++ Request (application/json)
+
+        {
+               "QUEUE_TYPE" : "[BROADCASTING | SHARING]",
+               "DATA" : "data"
+        }
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+
+## Arrows [/arrows]
+
+### arrow list 조회 - GET [GET]
+
+- 등록된 arrow의 목록 조회
+- engine 정보를 옵션으로 주어 해당 engine의 arrow 목록만 조회 가능
+
++ Request optional (application/json)
+
+        ** optional
+        {
+                "ENGINE_ID" : "e1"
+                "KEY" : "[KEY]"
+        }
+        
++ Response 200 (application/json)
+
+        
+        {
+            {
+                "ENGINE_ID": "ENGINE_ID",
+                "FLOW_ID" : ""
+                "ARROW_ID": "ARROW_ID",
+                "ARROW_NAME" : "ARROW_NAME"
+                "ARROW_URL" : "~/api/vi/{arrow_id}"
+            
+                "ARROW_TYPE":
+                {
+                
+                   "BROAD" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ],
+                   "SHARED" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ]
+                }
+            },
+            ...
+        }
+
+### arrow 등록 - POST [POST]
+
+- 새로운 arrow를 등록함
+    - arrow를 등록할 engine, flow와 arrow 정보를 함께 입력
+    - arrow id 반환
+
++ Request (application/json)
+
+        {
+                "ENGINE_ID": "e1",
+                "FLOW_ID" : "e1f1",
+                "ARROW_NAME": "parsearr",
+                
+               "ARROW_TYPE": "[SHARED | BROAD]", 
+               "ARROW_FROM": "[FROM TASK NAME]",
+               "ARROW_TO": "[TO TASK NAME]"    
+        }
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "ARROW_ID": "e1f1a5", 
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+        
+### arrow 삭제 - DELETE [DELETE]
+
+- 해당 arrow 등록 정보를 삭제함
+    - 삭제할 arrow의 engine, flow, arrow명 정보를 입력으로 받음
+- locking check
+    - 현재 arrow가 속한 flow가 동작중인지 확인  
+
++ Request (application/json)
+
+            {
+                "ARROW_ID": "e1"
+            }
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+        
+## Arrow [/arrows/{arrow_id}]
+
+
+### arrow 정보 수정 - PUT [PUT]
+
+- 해당 arrow를 수정함
+- 수정 가능 사항만 수정 가능
+    
+
++ Request (application/json)
+
+           {
+               * arrow 수정 사항
+               "KEY" : "ARROW_TYPE",
+               "VALUE" : "SHARED"
+           }
+
+        
+
++ Response 200 (application/json)
+
+           {
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
