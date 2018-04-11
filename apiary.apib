@@ -10,6 +10,15 @@ HOST: http://192.168.100.100/api/v1/
     - REST api가 연결되는 통합 관리 모듈
 - Workflow-Engine
     - 실제 task를 띄우고 flow를 관리하는 engine
+- Job
+    - crontab에 등록하는 일의 단위 
+    - 다수의 Task와 Flow로 구성
+    - 단일 Task도 job이 될 수있음
+-  Group
+    - Flow 집합
+- Flow
+    - 프로세스와 프로세스를(Task) 연결하는 흐름
+        - ex > flow : A(task) ->(arrow) B(task) ->(arrow) C(task)
 - Task
     - 하나의 프로세스를 의미
     - 하나의 프로세스에서 하나 이상의 작업 수행 가능
@@ -22,15 +31,7 @@ HOST: http://192.168.100.100/api/v1/
     - task간의 데이터 연결 방식을 정의하는 단위
     - arrow는 1:1, 1:n 형태 지원
     - broad, shared 두 가지 타입을 가짐
-- Flow
-    - 프로세스와 프로세스를(Task) 연결하는 흐름
-        - ex > flow : A(task) ->(arrow) B(task) ->(arrow) C(task)
-- Job
-    - crontab에 등록하는 일의 단위 
-    - 다수의 Task와 Flow로 구성
-    - 단일 Task도 job이 될 수있음
--  Group
-    - Flow 집합
+
 
 ## Engines [/engines]
 
@@ -601,8 +602,7 @@ HOST: http://192.168.100.100/api/v1/
 
         ** optional
         {
-            "ENGINE_ID" : "e1",
-            "KEY" : "[KEY]"
+            "ENGINE_ID" : "e1"
         }
         
 + Response 200 (application/json)
