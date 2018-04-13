@@ -23,15 +23,16 @@ HOST: http://192.168.100.100/api/v1/
         - group_db
         - engine_db
         - task_db
-        
 - Job
-    - flow를 특정 시간 주기로 실행하기 위해 crontab에 등록하는 일의 단위 [수정됨]
--  Group
+    - flow를 특정 시간 주기로 실행하기 위해 crontab에 등록 [수정됨]
+    - crontab 등록은 manager node에서만 되는지 flow가 있는 engine노드에 등록되는지 ?? [수정필요]
+- Group
     - Task 집합
     - 각기 다른 engine의 task 끼리 등록 가능
 - Flow
     - 프로세스와 프로세스를(Task) 연결하는 흐름
         - ex > flow : A(task) ->(arrow) B(task) ->(arrow) C(task)
+    - flow는 task, arrow, job을 포함
 - Task
     - 하나의 프로세스를 의미
     - 하나의 프로세스에서 하나 이상의 작업 수행 가능
@@ -51,7 +52,7 @@ HOST: http://192.168.100.100/api/v1/
 ### engine list 조회 - GET [GET]
 
 - 등록된 engine을 목록으로 가져옴
-    - WF-Manager 에 저장된 엔진 IP, Port, engine_name(alias), id 정보
+    - WF-Manager 에 저장된 엔진 IP, Port, engine_name, id 정보
     - engine_name, engine_id는 전체 시스템에서 각각 unique
 - CLI
     ```
@@ -93,7 +94,7 @@ HOST: http://192.168.100.100/api/v1/
 + Request (application/json)
 
         {
-            "ENGINE_NAME" : "test03",
+            "ENGINE_NAME" : "test_engine",
             "IP_ADDR": "192.168.100.21",
             "PORT" : "5050"
         }
@@ -102,8 +103,8 @@ HOST: http://192.168.100.100/api/v1/
 + Response 200 (application/json)
 
         {
-            "RESULT" : "[OK | NOK]",
-            "ENGINE_ID" : "3",
+            "RESULT" : "[OK|NOK]",
+            "ENGINE_ID" : "e3",
             "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"           
         }
 
@@ -129,7 +130,7 @@ HOST: http://192.168.100.100/api/v1/
             "STATUS" : "[VALID | INVALID | WAIT_RETRY]"
             "CPU": "23",
             "RAM" : "30",
-            "MEMORY" : "11",
+            "DISK" : "11",
             "IO_WAIT" : "1"
         }
 
@@ -187,8 +188,8 @@ HOST: http://192.168.100.100/api/v1/
 
         ** optional
         {
-            "ENGINE_NAME" : "engine_name",
-            "CHANGEABLE" : "[TRUE|FALSE]"
+            ("ENGINE_NAME" : "engine_name"),
+            ("CHANGEABLE" : "[TRUE|FALSE]")
         }
         
 + Response 200 (application/json)
@@ -249,7 +250,7 @@ HOST: http://192.168.100.100/api/v1/
 
         ** optional
         {
-               "ENGINE_NAME" : "engine1"
+               ("ENGINE_NAME" : "engine1")
         }
         
 + Response 200 (application/json)
@@ -451,6 +452,7 @@ HOST: http://192.168.100.100/api/v1/
 - group을 생성함
     - group을 생성할 group_name, group에 속할 task목록 입력
     - task리스트는 {flow_name}.{task_name} 형태로서 어느 flow의 task인지 명시되어야 함
+    - group_name 중복 불가
 - group_id 반환
 - CLI
     ```
@@ -603,7 +605,7 @@ HOST: http://192.168.100.100/api/v1/
 
         ** optional
         {
-                "ENGINE_NAME" : "engine01"
+                ("ENGINE_NAME" : "engine01")
         }
         
 + Response 200 (application/json)
@@ -615,29 +617,17 @@ HOST: http://192.168.100.100/api/v1/
                     "ENGINE_URL" : "~/engines/{engine_id}",
                     
                     "FLOW_NAME": "happy_flow",
-                    "FLOW_ID" : "~/flows/{flow_id}",
+                    "FLOW_ID" : "f1",
+                    "FLOW_URL" : "~/flows/{flow_id}"
+                },
+                {
+                    "ENGINE_NAME": "engine1",
+                    "ENGINE_ID" : "e1",
+                    "ENGINE_URL" : "~/engines/{engine_id}",
                     
-                    "FLOW_STATUS": "[standby | running | complete | warning]",
-                    "JOB_REGISTERED": "[True | False]",
-                    
-                    "FLOW_STRUCTURE" :
-                    {
-                        "TASKS" : [
-                            taskA [task_level1],
-                            taskB [task_level2],
-                            taskC [task_level3],
-                        ],
-                        
-                        "ARROWS" : [
-                            arrowA,
-                            arrowB,
-                        ],
-                    },
-                    "CREATE_TIME": "20180707111111", 
-                    "UPDATE_TIME": 
-                    "LAST_EXECUTE_TIME":
-                    "START_TIME":
-                    "END_TIME":
+                    "FLOW_NAME": "good_flow",
+                    "FLOW_ID" : "f2",
+                    "FLOW_URL" : "~/flows/{flow_id}"
                 },
             ...
         }
@@ -647,6 +637,7 @@ HOST: http://192.168.100.100/api/v1/
 - flow를 생성함
     - flow를 생성할 engine을 지정
     - flow_name을 입력하면 flow가 생성되고 flow_id반환
+    - flow_name 중복 불가
 - CLI
     ```
     $wf flow add --engine_name {engine01} --flow_name {flow01}
@@ -672,6 +663,49 @@ HOST: http://192.168.100.100/api/v1/
         
 ## Flow [/flows/{flow_id}]
 
+### flow 상세 정보 조회 - GET [GET]
+- flow 상세 정보 조회
+- CLI
+    ```
+    $wf flow info --flow_name {flow01}
+    ```
+
+
++ Response 200 (application/json)
+
+        
+        {
+            "ENGINE_NAME": "engine1",
+            "ENGINE_ID" : "e1",
+            "ENGINE_URL" : "~/engines/{engine_id}",
+            
+            "FLOW_NAME": "happy_flow",
+            "FLOW_ID" : "f1",
+            "FLOW_URL" : "~/flows/{flow_id}",
+            
+            "FLOW_STATUS": "[standby | running | complete | warning]",
+            "JOB_REGISTERED": "[True | False]",
+            
+            "FLOW_STRUCTURE" :
+            {
+                "TASKS" : [
+                    taskA [task_level1],
+                    taskB [task_level2],
+                    taskC [task_level3],
+                ],
+                
+                "ARROWS" : [
+                    arrowA,
+                    arrowB,
+                ],
+            },
+            "CREATE_TIME": "20180707111111", 
+            "UPDATE_TIME": 
+            "LAST_EXECUTE_TIME":
+            "START_TIME":
+            "END_TIME":
+        }
+        
 ### flow 수정 - PUT [PUT]
 
 - 해당 flow를 수정함
@@ -749,7 +783,6 @@ HOST: http://192.168.100.100/api/v1/
 ### task list 조회 - GET [GET]
 - 등록된 Task 정보를 목록으로 가져옴
 - 옵션을 통해 특정 키나 특정 엔진의 task 리스트만 조회 가능
-- task 의 소속 engine, flow 정보, task의 level정보 함께 조회(flow의 단계)
 - CLI
     ```
     $wf task list (--engine_name {engine01})
@@ -768,39 +801,29 @@ HOST: http://192.168.100.100/api/v1/
 
            {
                 "ENGINE_NAME" : "engine01",
-                "ENGINE_ID" : "e1"
+                "ENGINE_ID" : "e1",
                 "ENGINE_URL" : "~/engines/{engine_id}",
                 
                 "FLOW_NAME" : "flow01",
-                "FLOW_ID" : "f1"
+                "FLOW_ID" : "f1",
                 "FLOW_URL" : "~/flows/{flow_id}",
                 
-                "TASK_NAME" : "TASK_NAME",
-                "TASK_ID" : "t1"
+                "TASK_NAME" : "task01",
+                "TASK_ID" : "t1",
                 "TASK_URL" : "~/{flow_id}/tasks/{task_id}",
+           },
+           {
+                "ENGINE_NAME" : "engine01",
+                "ENGINE_ID" : "e1",
+                "ENGINE_URL" : "~/engines/{engine_id}",
                 
-                "TASK_LEVEL" : "2",
-                "DAEMON" : "[True | False]",
-                "PID": "PID",
-                "STATUS": "[ACTIVE | INACTIVE]",
-                "JOB_REGISTERED": "[True | False]",
+                "FLOW_NAME" : "flow01",
+                "FLOW_ID" : "f1",
+                "FLOW_URL" : "~/flows/{flow_id}",
                 
-                "ACT-TIME" : "[ACT-TIME]",
-                "ACT-STATUS" : "[ACT-STATUS]", 
-                "ACT-COUNT" : "[ACT-COUNT]",
-                "COMMAND" : "[COMMAND]",
-                
-                "CREATE_TIME": "20180707111111", 
-                "UPDATE_TIME": "20180707111112", 
-                "LAST_EXECUTE_TIME": "20180707111113", 
-                "START_TIME": "20180707111113", 
-                "END_TIME": "20180707111114", 
-                
-                "LAST-STATUS" : {
-                   "LAST-STD-IN" : "[EVENT_DATA]",
-                   "LAST-STD-OUT" : "[EVENT_DATA]",
-                   "LAST-STD-ERR" : "[EVENT_DATA]"
-                }
+                "TASK_NAME" : "task02",
+                "TASK_ID" : "t2",
+                "TASK_URL" : "~/{flow_id}/tasks/{task_id}",
            },
            ...
 
@@ -844,6 +867,55 @@ HOST: http://192.168.100.100/api/v1/
 
 ## Task [/{flow_id}/tasks/{task_id}]
 
+### task 상세 정보 조회 - GET [GET]
+- task 상세 정보 조회
+- CLI
+    ```
+    $wf task info --flow_name {flow01} --task_name {task01} 
+    ```
+
++ Response 200 (application/json)
+
+
+           {
+                "ENGINE_NAME" : "engine01",
+                "ENGINE_ID" : "e1",
+                "ENGINE_URL" : "~/engines/{engine_id}",
+                
+                "FLOW_NAME" : "flow01",
+                "FLOW_ID" : "f1",
+                "FLOW_URL" : "~/flows/{flow_id}",
+                
+                "TASK_NAME" : "TASK_NAME",
+                "TASK_ID" : "t1",
+                "TASK_URL" : "~/{flow_id}/tasks/{task_id}",
+                
+                "TASK_LEVEL" : "2",
+                "DAEMON" : "[True | False]",
+                "PID": "PID",
+                "STATUS": "[ACTIVE | INACTIVE]",
+                "JOB_REGISTERED": "[True | False]",
+                
+                "ACT-TIME" : "[ACT-TIME]",
+                "ACT-STATUS" : "[ACT-STATUS]", 
+                "ACT-COUNT" : "[ACT-COUNT]",
+                "COMMAND" : "[COMMAND]",
+                
+                "CREATE_TIME": "20180707111111", 
+                "UPDATE_TIME": "20180707111112", 
+                "LAST_EXECUTE_TIME": "20180707111113", 
+                "START_TIME": "20180707111113", 
+                "END_TIME": "20180707111114", 
+                
+                "LAST-STATUS" : {
+                   "LAST-STD-IN" : "[EVENT_DATA]",
+                   "LAST-STD-OUT" : "[EVENT_DATA]",
+                   "LAST-STD-ERR" : "[EVENT_DATA]"
+                }
+            }
+
+        
+        
 ### task 상세 정보 변경 - PUT [PUT]
 - task의 상세 정보를 변경
 - CLI
@@ -890,7 +962,7 @@ HOST: http://192.168.100.100/api/v1/
 ## Task control [/{flow_id}/tasks/{task_id}/control]
 
 
-### Task 제어 - PUT [PUT]
+### task 제어 - PUT [PUT]
 
 - task의 상태를 start|stop|resume|pause 을 통해 동작 제어
 - CLI
@@ -1029,7 +1101,7 @@ HOST: http://192.168.100.100/api/v1/
 
         ** optional
         {
-                "ENGINE_NAME" : "engine1"
+                ("ENGINE_NAME" : "engine1")
         }
         
 + Response 200 (application/json)
@@ -1048,25 +1120,19 @@ HOST: http://192.168.100.100/api/v1/
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a1",
                 "ARROW_URL" : "~/{flow_id}/arrows/{arrow_id}"
-            
-                "TYPE":
-                {
+            },
+             {
+                "ENGINE_NAME": "engine01",
+                "ENGINE_ID" : "e1",
+                "ENGINE_URL" : "~/engines/{engine_id}",
                 
-                   "BROAD" : [ 
-                       {
-                           "FROM" : "[TASK]",
-                           "TO" : "[TASK]"
-                       },
-                       ...
-                   ],
-                   "SHARED" : [ 
-                       {
-                           "FROM" : "[TASK]",
-                           "TO" : "[TASK]"
-                       },
-                       ...
-                   ]
-                }
+                "FLOW_NAME" : "flow01",
+                "FLOW_ID" : "f1",
+                "FLOW_URL" : "~/flows/{flow_id}",
+                
+                "ARROW_NAME" : "ARROW_NAME",
+                "ARROW_ID" : "a2",
+                "ARROW_URL" : "~/{flow_id}/arrows/{arrow_id}"
             },
             ...
         }
@@ -1103,8 +1169,51 @@ HOST: http://192.168.100.100/api/v1/
 ## Arrow [/{flow_id}/arrows/{arrow_id}]
 
 
-### arrow 정보 수정 - PUT [PUT]
+### arrow 상세 정보 조회 - GET [GET]
+- arrow 상세 정보 조회
+- CLI
+    ```
+    $wf arrow info --flow_name {flow01} --arrow_name {arrow01}
+    ```
++ Response 200 (application/json)
 
+
+            {
+                "ENGINE_NAME": "engine01",
+                "ENGINE_ID" : "e1",
+                "ENGINE_URL" : "~/engines/{engine_id}",
+                
+                "FLOW_NAME" : "flow01",
+                "FLOW_ID" : "f1",
+                "FLOW_URL" : "~/flows/{flow_id}",
+                
+                "ARROW_NAME" : "ARROW_NAME",
+                "ARROW_ID" : "a1",
+                "ARROW_URL" : "~/{flow_id}/arrows/{arrow_id}"
+            
+                "TYPE":
+                {
+                
+                   "BROAD" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ],
+                   "SHARED" : [ 
+                       {
+                           "FROM" : "[TASK]",
+                           "TO" : "[TASK]"
+                       },
+                       ...
+                   ]
+                }
+            }
+
+
+
+### arrow 정보 수정 - PUT [PUT]
 - 해당 arrow를 수정함
 - 수정 가능 사항만 수정 가능
 - CLI
@@ -1124,7 +1233,7 @@ HOST: http://192.168.100.100/api/v1/
 + Response 200 (application/json)
 
            {
-               "RESULT" : ["OK"|"NOK"],
+               "RESULT" : "[OK|NOK]",
                "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
            }
            
