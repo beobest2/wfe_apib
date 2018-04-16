@@ -22,7 +22,9 @@ HOST: http://192.168.100.100/api/v1/
             - task_id | task_name | engine_id | flow_id | command | ...
 - Workflow-Engine
     - 실제 task를 띄우고 실행시키는 엔진
-    - Task-agent가 사용자가 지정한 cmd를 실행하고, Task-monitor가 task 상태 모니터링 
+    - Task-agent 와 Task-monitor로 구성
+        - Task-agent가 사용자가 지정한 cmd를 subprocess로 실행 
+        - Task-monitor가 task 상태 모니터링 
 - Job
     - 작업을 특정 시간 주기로 실행하기 위해 crontab에 등록
         - task, flow, group 등록 가능
