@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: http://192.168.100.100/api/v1/
+HOST: http://192.168.100.180/api/v1/
 
 # WFE (Work Flow Engine)
 
@@ -85,7 +85,7 @@ HOST: http://192.168.100.100/api/v1/
                     "PORT" : "5000",
                     "ENGINE_NAME": "test01",
                     "ENGINE_ID" : "e1",
-                    "ENGHINE_URL" : "~/engines/{engine_id}",
+                    "ENGHINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -94,7 +94,7 @@ HOST: http://192.168.100.100/api/v1/
                     "IP_ADDR" : "192.168.100.11",
                     "PORT" : "5002",
                     "ENGINE_NAME" : "test02",
-                    "ENGHINE_URL" : "~/engines/{engine_id}",
+                    "ENGHINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -286,7 +286,7 @@ HOST: http://192.168.100.100/api/v1/
                {
                    "JOB_NAME" : "etl_job01",
                    "JOB_ID" : "j1"
-                   "JOB_URL" : "~/jobs/{job_id}",
+                   "JOB_URL" : "http://192.168.100.180/api/v1/jobs/{job_id}",
                },
                ...
                
@@ -336,7 +336,7 @@ HOST: http://192.168.100.100/api/v1/
            {
                "JOB_ID" : "j1",
                "JOB_NAME" : "etl_job01",
-               "JOB_URL" : "~/jobs/{job_id}",
+               "JOB_URL" : "http://192.168.100.180/api/v1/jobs/{job_id}",
                
                "CREATE_TIME": "20180707111111", 
                "UPDATE_TIME": "20180707111111",
@@ -349,7 +349,7 @@ HOST: http://192.168.100.100/api/v1/
                    
                         "FLOW_NAME" : "flow01",
                         "FLOW_ID" : "f1",
-                        "FLOW_URL" : "~/flows/{flow_id}"
+                        "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}"
                    }
                ,
                "TIME_FORMAT" : "*/1 * * * *",
@@ -446,7 +446,7 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "JOB_ID" : "j1",
                 "JOB_NAME" : "etl_job01",
-                "JOB_URL" : "~/{flow_id}/jobs/{job_id}",
+                "JOB_URL" : "http://192.168.100.180/api/v1/jobs/{job_id}",
                 "JOB_STATUS" : "[enabled|disabled]"
            }
 
@@ -488,7 +488,7 @@ HOST: http://192.168.100.100/api/v1/
                 {
                     "GROUP_ID" : "g1",
                     "GROUP_NAME" : "etl_group01",
-                    "GROUP_URL" : "~/groups/{group_id}",
+                    "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
                     
                     "MEMBER_COUNT" : "4",
                     "TRM_COUNT" : "4",
@@ -498,7 +498,7 @@ HOST: http://192.168.100.100/api/v1/
                 {
                     "GROUP_ID" : "g2",
                     "GROUP_NAME" : "parser_group",
-                    "GROUP_URL" : "~/groups/{group_id}",
+                    "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
                     
                     "MEMBER_COUNT" : "3",
                     "TRM_COUNT" : "2",
@@ -550,7 +550,7 @@ HOST: http://192.168.100.100/api/v1/
         {
             "GROUP_ID" : "g1",
             "GROUP_NAME" : "etl_group01",
-            "GROUP_URL" : "~/groups/{group_id}",
+            "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
             
             "MEMBERS" :
             {
@@ -646,7 +646,7 @@ HOST: http://192.168.100.100/api/v1/
             {
                 "GROUP_ID" : "g1",
                 "GROUP_NAME" : "etl_group01",
-                "GROUP_URL" : "~/groups/{group_id}",
+                "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
                 "GROUP_MEMBERS" : 
                    {
                             {   
@@ -687,7 +687,7 @@ HOST: http://192.168.100.100/api/v1/
                 {
                     "FLOW_ID" : "f1",
                     "FLOW_NAME": "happy_flow",
-                    "FLOW_URL" : "~/flows/{flow_id}",
+                    "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
                     
                     "MEMBER_COUNT" : "5",
                     "INIT_COUNT" : "0",
@@ -703,7 +703,7 @@ HOST: http://192.168.100.100/api/v1/
                 {
                     "FLOW_ID" : "f2",
                     "FLOW_NAME": "good_flow",
-                    "FLOW_URL" : "~/flows/{flow_id}",
+                    "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
                     
                     "MEMBER_COUNT" : "5",
                     "INIT_COUNT" : "0",
@@ -763,7 +763,7 @@ HOST: http://192.168.100.100/api/v1/
         {
             "FLOW_ID" : "f1",
             "FLOW_NAME": "happy_flow",
-            "FLOW_URL" : "~/flows/{flow_id}",
+            "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
             
             "FLOW_VALIDITY" : "[OK|SPLITTED]",
             "JOB_REGISTERED": "[True | False]",
@@ -776,42 +776,42 @@ HOST: http://192.168.100.100/api/v1/
                             {   
                                 "ENGINE_NAME" : "engine01",
                                 "ENGINE_ID" : "e1",
-                                "ENGINE_URL" : "~/engines/{engine_id}",
+                                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                                 
                                 "TASK_NAME" : "task01",
                                 "TASK_ID" : "t1",
-                                "TASK_URL" : "~/tasks/{task_id}"
+                                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                             },
                         "task03":
                         {   "ENGINE_NAME" : "engine01",
                                 "ENGINE_ID" : "e1",
-                                "ENGINE_URL" : "~/engines/{engine_id}",
+                                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                                 
                                 "TASK_NAME" : "task03",
                                 "TASK_ID" : "t3",
-                                "TASK_URL" : "~/tasks/{task_id}"
+                                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
 
                         },
                         "task02":
                         {  
                                 "ENGINE_NAME" : "engine01",
                                 "ENGINE_ID" : "e1",
-                                "ENGINE_URL" : "~/engines/{engine_id}",
+                                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                                 
                                 "TASK_NAME" : "task02",
                                 "TASK_ID" : "t2",
-                                "TASK_URL" : "~/tasks/{task_id}"
+                                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                         }
                 ],
                 
                 "ARROWS" : [
                     "arrow01":
                             {   
-                                "ARROW_URL" : "~/tasks/{task_id}"
+                                "ARROW_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                             },
                     "arrow02":
                             {   
-                                "ARROW_URL" : "~/tasks/{task_id}"
+                                "ARROW_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                             }
                 ],
             },
@@ -913,7 +913,7 @@ HOST: http://192.168.100.100/api/v1/
             {
                 "FLOW_NAME": "happy_flow",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "~/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
                     
                 "MEMBER_COUNT" : "5",
                 "INIT_COUNT" : "0",
@@ -930,11 +930,11 @@ HOST: http://192.168.100.100/api/v1/
                                     {   
                                         "ENGINE_NAME" : "engine01",
                                         "ENGINE_ID" : "e1",
-                                        "ENGINE_URL" : "~/engines/{engine_id}",
+                                        "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                                         
                                         "TASK_NAME" : "task01",
                                         "TASK_ID" : "t1",
-                                        "TASK_URL" : "~/tasks/{task_id}"
+                                        "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                                         "TASK_STATUS" : "[INIT|RUNNING|STOP]",
                                         "LAST_UPDATE_TIME" : "20181111000000",
                                        
@@ -948,11 +948,11 @@ HOST: http://192.168.100.100/api/v1/
                                 "t3":
                                 {   "ENGINE_NAME" : "engine01",
                                         "ENGINE_ID" : "e1",
-                                        "ENGINE_URL" : "~/engines/{engine_id}",
+                                        "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                                         
                                         "TASK_NAME" : "task03",
                                         "TASK_ID" : "t3",
-                                        "TASK_URL" : "~/tasks/{task_id}"
+                                        "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                                         "TASK_STATUS" : "[INIT|RUNNING|STOP]",
                                         "LAST_UPDATE_TIME" : "20181111000000",
                                         "INPUT_MSG_COUNT" : "0",
@@ -966,11 +966,11 @@ HOST: http://192.168.100.100/api/v1/
                                 { 
                                         "ENGINE_NAME" : "engine01",
                                         "ENGINE_ID" : "e1",
-                                        "ENGINE_URL" : "~/engines/{engine_id}",
+                                        "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                                         
                                         "TASK_NAME" : "task02",
                                         "TASK_ID" : "t2",
-                                        "TASK_URL" : "~/tasks/{task_id}"
+                                        "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
                                          "TASK_STATUS" : "[INIT|RUNNING|STOP]",
                                          "LAST_UPDATE_TIME" : "20181111000000",
                                          "INPUT_MSG_COUNT" : "0",
@@ -1008,11 +1008,11 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "ENGINE_ID" : "e1",
                 "ENGINE_NAME" : "engine01",
-                "ENGINE_URL" : "~/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                 
                 "TASK_ID" : "t1",
                 "TASK_NAME" : "task01",
-                "TASK_URL" : "~/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
                 
                 "GROUP_ID" : "None",
                 "FLOW_ID" : "f1",
@@ -1077,14 +1077,14 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "ENGINE_NAME" : "engine01",
                 "ENGINE_ID" : "e1",
-                "ENGINE_URL" : "~/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                 
                 "GROUP_ID" : "None",
                 "FLOW_ID" : "f1"
                 
                 "TASK_NAME" : "TASK_NAME",
                 "TASK_ID" : "t1",
-                "TASK_URL" : "~/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
                 
                 "TASK_LEVEL" : "2",
                 "IS_DAEMON" : "[True|False]",
@@ -1194,11 +1194,11 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "ENGINE_ID" : "e1",
                 "ENGINE_NAME" : "engine01",
-                "ENGINE_URL" : "~/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                 
                 "TASK_ID" : "t1",
                 "TASK_NAME" : "task01",
-                "TASK_URL" : "~/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
                 
                 "TASK_STATUS" : "[ACT|INIT|TRM|ABN]",
                 "LAST_UPDATE_TIME" : "20181111000000"
@@ -1220,11 +1220,11 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "ENGINE_NAME": "engine01",
                 "ENGINE_ID" : "e1",
-                "ENGINE_URL" : "~/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                 
                 "TASK_NAME" : "task01",
                 "TASK_ID" : "t1",
-                "TASK_URL" : "~/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
                 
                 "PID" : "1234",
                 "CPU": "20",
@@ -1274,11 +1274,11 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "ENGINE_NAME": "engine01",
                 "ENGINE_ID" : "e1",
-                "ENGINE_URL" : "~/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
                 
                 "TASK_NAME" : "task01",
                 "TASK_ID" : "t1",
-                "TASK_URL" : "~/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
                 
                 "TASK_QUEUE" : 
                     {
@@ -1360,21 +1360,21 @@ HOST: http://192.168.100.100/api/v1/
 
                 "FLOW_NAME" : "flow01",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "~/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
                 
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a1",
-                "ARROW_URL" : "~/arrows/{arrow_id}"
+                "ARROW_URL" : "http://192.168.100.180/api/v1/arrows/{arrow_id}"
             },
              {
 
                 "FLOW_NAME" : "flow01",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "~/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
                 
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a2",
-                "ARROW_URL" : "~/arrows/{arrow_id}"
+                "ARROW_URL" : "http://192.168.100.180/api/v1/arrows/{arrow_id}"
             },
             ...
         }
@@ -1427,11 +1427,11 @@ HOST: http://192.168.100.100/api/v1/
                 
                 "FLOW_NAME" : "flow01",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "~/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
                 
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a1",
-                "ARROW_URL" : "~/arrows/{arrow_id}"
+                "ARROW_URL" : "http://192.168.100.180/api/v1/arrows/{arrow_id}"
             
                 "ARROW" : "t1 -> t2"
             }
