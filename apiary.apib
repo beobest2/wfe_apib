@@ -206,11 +206,11 @@ HOST: http://192.168.100.100/api/v1/
 - 등록된 engine 정보를 삭제함
 - CLI
     ```
-    $wf engine del --engine_id {e1}
+    $wf engine delete --engine_id {e1}
     ``` 
 - example
     ```
-    node01 $ wf engine del –engine_id e3
+    node01 $ wf engine delete –engine_id e3
     +OK engine "e3" is deleted.
     ```
         
@@ -430,7 +430,7 @@ HOST: http://192.168.100.100/api/v1/
 - 등록되어있는 job을 삭제함
 - CLI
     ```
-    $wf job del --job_id {j1}
+    $wf job delete --job_id {j1}
     ```
         
 + Response 200 (application/json)
@@ -645,7 +645,7 @@ HOST: http://192.168.100.100/api/v1/
 - group  둥록 정보 삭제
 - CLI
     ```
-    $wf group del --group_id {g1}
+    $wf group delete --group_id {g1}
     ```
            
 + Response 200 (application/json)
@@ -899,7 +899,7 @@ HOST: http://192.168.100.100/api/v1/
     - flow가 현재 동작중인지 체크
 - CLI
     ```
-    $wf flow del --flow_id {f1}
+    $wf flow delete --flow_id {f1}
     ```
         
 + Response 200 (application/json)
@@ -1173,7 +1173,7 @@ HOST: http://192.168.100.100/api/v1/
     - 현재 task가 속한 flow가 동작중인지 확인
 - CLI
     ```
-    $wf task del --task_id {t1}
+    $wf task delete --task_id {t1}
     ```
 
 + Response 200 (application/json)
@@ -1512,7 +1512,7 @@ HOST: http://192.168.100.100/api/v1/
     - 현재 arrow가 속한 flow가 동작중인지 확인
 - CLI
     ```
-    $wf arrow del --arrow_id {a1}
+    $wf arrow delete --arrow_id {a1}
     ```
 
 + Response 200 (application/json)
