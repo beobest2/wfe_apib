@@ -27,27 +27,24 @@ HOST: http://192.168.100.100/api/v1/
         - Task-agent가 사용자가 지정한 cmd를 subprocess로 실행 
         - Task-monitor가 task 상태 모니터링 
 - Job
-    - 작업을 특정 시간 주기로 실행하기 위해 crontab에 등록
+    - 작업을 특정 시간 주기로 실행
         - task, flow, group 등록 가능
-        - 각기 다른 engine의 task, flow, group끼리 등록 가능
     - manager에서 crontab이 등록되어 실제 동작은 각 engine에서 수행
     - job 개별적 활성 상태 제어 가능
         - 제어 : enable | disable
         - 상태 : enabled | disabled
 - Group
-    - 동시 control을 위한, 사용자가 지정하는 task 또는 flow 집합
-    - 각기 다른 engine의 task, flow 끼리 등록 가능
+    - 동시 control을 위해 사용자가 지정하는 task,flow,group 집합
 - Flow
     - 프로세스와 프로세스를(Task) 연결하는 흐름
         - ex > flow : A(task) ->(arrow) B(task) ->(arrow) C(task)
     - flow는 task, arrow를 포함
     - flow는 
-        - start point task를 지정해서 flow 시작하거나 flow에 등록된 task sequence 순서대로 task 실행
+        - start point task를 지정해서 flow 시작하거나, flow에 등록된 task sequence 순서대로 task 실행
         - task sequence 수정 가능
-    - arrow가 끊어졌을 경우 splitted 상태 표시
+    - arrow가 끊어졌을 경우 splitted 상태 표시됨
 - Task
     - 하나의 프로세스를 의미
-    - 하나의 프로세스에서 하나 이상의 작업 수행 가능
     - 모든 프로그래밍 언어 지원
     - Workflow-Engine 에서 동작
     - output 메세지 전송 방식에 따라 broad, shared 두 가지 타입을 가짐
@@ -55,12 +52,14 @@ HOST: http://192.168.100.100/api/v1/
     - task 개별적인 실행 정지 control 가능
         - 상태 : init | act | trm | abn 
         - 제어 : act  | trm
-    - 비정상 종료시 retry여부 optional
+    - 비정상 종료시 retry여부 option으로 지정 가능
+        - retry 횟수 지정 가능
 - Queue
     - Task간에 데이터가 공유되는 queue
     - 하나의 task는 input과 output 두가지의 queue를 가짐
     - 방향성 존재
-    - task 중단시 옵션으로 Queue의 데이터를 비우거나 disk에 dump/load 가능
+    - task 중단시 옵션으로 Queue의 데이터를 비우거나 disk에 dump 가능
+        - 재실행시 dump된 데이터 load 가능
     - broad 방식의 task일 때 목적 task의 input queue에 데이터를 전송
     - shared 방식의 task일 때 목적 task가 output queue에서 데이터를 번갈아가며 가져감
 - Arrow
@@ -366,9 +365,9 @@ HOST: http://192.168.100.100/api/v1/
 + Request (application/json)
 
         {
-                "JOB_NAMR" : "job01",
+                "JOB_NAME" : "job01",
                 "MEMBERS" : "t1,t2,f4",
-                "CONTROL" : "act"
+                "CONTROL" : "act",
                 "SCHEDULE": "*/1 * * * *"
         }
         
