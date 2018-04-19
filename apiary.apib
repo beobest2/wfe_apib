@@ -7,20 +7,6 @@ HOST: http://192.168.100.100/api/v1/
     - 다수 또는 단일 workflow-engine을 관리
     - REST api가 연결되는 통합 관리 모듈
     - manager가 관리하는 데이터베이스
-        - config_db
-        - engine_db
-            - engine_id | engine_name | ip | port |
-        - job_db
-            - job_id | job_name | members | control | schedule | activity | create_time | update_time |
-        - group_db
-            - group_id | group_name | members | job_id | create_time | update_time |
-        - flow_db
-            - flow_id | flow_name | members | job_id | group_id | create_time | update_time |
-        - task_db
-            - task_id | task_name | command | is_daemon | output_type | description | engine_id | job_id | group_id | flow_id | create_time | update_time |
-        - arrow_db
-            - arrow_id | arrow_name | arrow_type | arrow | flow_id | create_time | update_time |
-        
 - Workflow-Engine
     - 실제 task를 띄우고 실행시키는 엔진
     - Task-agent 와 Task-monitor로 구성
@@ -33,8 +19,10 @@ HOST: http://192.168.100.100/api/v1/
     - job 개별적 활성 상태 제어 가능
         - 제어 : enable | disable
         - 상태 : enabled | disabled
+    - job의 id는 j로 시작
 - Group
     - 동시 control을 위해 사용자가 지정하는 task,flow,group 집합
+    - group의 id는 g로 시작
 - Flow
     - 프로세스와 프로세스를(Task) 연결하는 흐름
         - ex > flow : A(task) ->(arrow) B(task) ->(arrow) C(task)
@@ -43,6 +31,7 @@ HOST: http://192.168.100.100/api/v1/
         - start point task를 지정해서 flow 시작하거나, flow에 등록된 task sequence 순서대로 task 실행
         - task sequence 수정 가능
     - arrow가 끊어졌을 경우 splitted 상태 표시됨
+    - flow의 id는 f로 시작
 - Task
     - 하나의 프로세스를 의미
     - 모든 프로그래밍 언어 지원
@@ -54,6 +43,7 @@ HOST: http://192.168.100.100/api/v1/
         - 제어 : act  | trm
     - 비정상 종료시 retry여부 option으로 지정 가능
         - retry 횟수 지정 가능
+    - task의 id는 t로 시작
 - Queue
     - Task간에 데이터가 공유되는 queue
     - 하나의 task는 input과 output 두가지의 queue를 가짐
@@ -67,6 +57,7 @@ HOST: http://192.168.100.100/api/v1/
     - flow가 먼저 정해진 후에 arrow 등록
     - arrow는 1:1로 두개의 task를 연결하는 형태
         - A -> B
+    - arrow의 id는 a로 시작
 
 
 ## Engines [/engines]
@@ -324,12 +315,12 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node01 $ wf job list
-    =====================================================================
-    job_name       job_id   members   control       schedule     activity
+    ==============================================================
+    job_name       job_id   members         schedule     activity
     
-    parsing_job     j1       t1,t3      act         */1 * * *    active
-    load_aaa01      j2       f1,t4      act         */5 * * *    inactive
-    =====================================================================
+    parsing_job     j1       t1,t3         */1 * * *    active
+    load_aaa01      j2       f1,t4         */5 * * *    inactive
+    ==============================================================
     ```
         
 + Response 200 (application/json)
@@ -342,24 +333,22 @@ HOST: http://192.168.100.100/api/v1/
                    "JOB_URL" : "http://192.168.100.100/api/v1/jobs/j1",
                    
                    "MEMBERS" : "t1,t2,f3",
-                   "CONTROL" : "act",
                    "SCHEDULE" : "*/1 * * *",
                    
                    "ACTIVITY" : "ENABLE",
                    "CALLBACK_URL" : "192.168.100.111/callback"
-                   
                },
                ...
         }
 
 ### job 생성 - POST [POST]
 
-- job을 생성함, crontab에 등록됨
+- job을 생성함, schedule이 등록됨
 - job이 등록될 engine, 등록할 작업(flow | group | task), job_name, schedule(시간 주기) 입력
 - job_id 반환
 - CLI
     ```
-    $wf job create --job_name {job01}  (--members {t1,t2,f4}) --control [act|trm] --schedule {*/1 * * * *}
+    $wf job create --job_name {job01}  (--members {t1,t2,f4}) --schedule {*/1 * * * *}
     ```
     
 + Request (application/json)
@@ -367,7 +356,6 @@ HOST: http://192.168.100.100/api/v1/
         {
                 "JOB_NAME" : "job01",
                 "MEMBERS" : "t1,t2,f4",
-                "CONTROL" : "act",
                 "SCHEDULE": "*/1 * * * *"
         }
         
@@ -401,7 +389,6 @@ HOST: http://192.168.100.100/api/v1/
                "JOB_URL" : "http://192.168.100.100/api/v1/jobs/j1",
                
                "MEMBERS" : "t1,t2,f3",
-               "CONTROL" : "act",
                "SCHEDULE" : "*/1 * * *",
                
                "CALL_BACK_URL" : "192.168.100.111/callback"
@@ -552,7 +539,8 @@ HOST: http://192.168.100.100/api/v1/
 
 - group을 생성함
     - group을 생성할 group_name 입력
-    - optional 하게 초기에 group에 속할 task or flow 목록 입력 가능
+    - optional 하게 초기에 group에 속할 task or flow or group 목록 입력 가능
+        - 자신의 group을 등록하면 오류 메세지 표시
     - group_name 중복 불가
 - group_id 반환
 - CLI
