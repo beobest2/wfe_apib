@@ -11,15 +11,15 @@ HOST: http://192.168.100.100/api/v1/
         - engine_db
             - engine_id | engine_name | ip | port |
         - job_db
-            - job_id | job_name | members | control | schedule | 
+            - job_id | job_name | members | control | schedule | activity | create_time | update_time |
         - group_db
-            - group_id | group_name | members | job_id |
+            - group_id | group_name | members | job_id | create_time | update_time |
         - flow_db
-            - flow_id | flow_name | members | job_id | group_id |
+            - flow_id | flow_name | members | job_id | group_id | create_time | update_time |
         - task_db
-            - task_id | task_name | command | is_daemon | output_type | description | engine_id | job_id | group_id | flow_id | 
+            - task_id | task_name | command | is_daemon | output_type | description | engine_id | job_id | group_id | flow_id | create_time | update_time |
         - arrow_db
-            - arrow_id | arrow_name | arrow_type | arrow | flow_id | 
+            - arrow_id | arrow_name | arrow_type | arrow | flow_id | create_time | update_time |
         
 - Workflow-Engine
     - 실제 task를 띄우고 실행시키는 엔진
@@ -31,7 +31,7 @@ HOST: http://192.168.100.100/api/v1/
         - task, flow, group 등록 가능
         - 각기 다른 engine의 task, flow, group끼리 등록 가능
     - manager에서 crontab이 등록되어 실제 동작은 각 engine에서 수행
-    - job 개별적 활성상태 제어 가능
+    - job 개별적 활성 상태 제어 가능
         - 제어 : enable | disable
         - 상태 : enabled | disabled
 - Group
@@ -85,7 +85,8 @@ HOST: http://192.168.100.100/api/v1/
     ```
     node01 $ wf engine list
     =========================================================================================
-    ip_addr             port     engine_name     engine_id   engine_status   last_update_time             
+    ip_addr             port     engine_name     engine_id   engine_status   last_update_time           
+    
     192.168.100.150     9292     test_engine      e1           valid          20181111000000
     192.168.100.151     9393     test_engine2     e2           valid          20181111000000
     =========================================================================================
@@ -324,12 +325,12 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node01 $ wf job list
-    ===================================================================
+    =====================================================================
     job_name       job_id   members   control       schedule     activity
     
     parsing_job     j1       t1,t3      act         */1 * * *    active
     load_aaa01      j2       f1,t4      act         */5 * * *    inactive
-    ===================================================================
+    =====================================================================
     ```
         
 + Response 200 (application/json)
@@ -345,7 +346,8 @@ HOST: http://192.168.100.100/api/v1/
                    "CONTROL" : "act",
                    "SCHEDULE" : "*/1 * * *",
                    
-                   "ACTIVITY" : "ENABLE"
+                   "ACTIVITY" : "ENABLE",
+                   "CALLBACK_URL" : "192.168.100.111/callback"
                    
                },
                ...
@@ -384,11 +386,13 @@ HOST: http://192.168.100.100/api/v1/
 
 ### job 상세 정보 조회 - GET [GET]
 - job 상세정보 조회
+- job list와 출력 결과 차이가 거의 없음 ??
 - CLI
     ```
     $wf job info --job_id {j1}
     ```
-           
+    
+    
 + Response 200 (application/json)
 
 
@@ -401,7 +405,7 @@ HOST: http://192.168.100.100/api/v1/
                "CONTROL" : "act",
                "SCHEDULE" : "*/1 * * *",
                
-               "CALL_BACK_URL" : "192.168.123.123/jobs/??"
+               "CALL_BACK_URL" : "192.168.100.111/callback"
            }
            
 ### job 상태 변경 - PUT [PUT]
@@ -477,40 +481,6 @@ HOST: http://192.168.100.100/api/v1/
            } 
 
 
-## Job status [/jobs/{job_id}/status]
-
-### Job 상태정보 조회 - GET [GET]
-
-- Job 상태 정보를 받아옴
-- control에 의해 현재 비활성화인지 동작중인지 조회
-- CLI
-    ```
-    $wf job status --job_id {j1}
-    ```
-
-
-+ Response 200 (application/json)
-
-
-           {
-               "JOB_NAME" : "parsing_job",
-               "JOB_ID" : "j1",
-               "JOB_URL" : "http://192.168.100.100/api/v1/jobs/j1",
-               
-               "MEMBERS" : "t1,t2,f3",
-               "CONTROL" : "act",
-               "SCHEDULE" : "*/1 * * *",
-               
-               "CREATE_TIME": "20180707111111", 
-               "UPDATE_TIME": "20180707111111",
-               "LAST_EXECUTE_TIME": "20180707111122", 
-               
-               "ACTIVITY": "ENABLE",
-               
-               "CALL_BACK_URL" : "192.168.123.123/jobs/??"
-           }
-
-
 ## Job statistic [/jobs/{job_id}/statistic]
 
 ### Job 통계정보 조회 - GET [GET]
@@ -543,11 +513,11 @@ HOST: http://192.168.100.100/api/v1/
     ```
     node 01 $ wf group list
     ==================================================================
-    group_name      group_id       member_count         trm/init/act
+    group_name      group_id       member_count      trm/init/act/abn
     
-    rnc01           g1                4                  4/0/0
-    parser_group    g2                3                  2/0/1
-    ===================================================================
+    rnc01           g1                4               4/0/0/0
+    parser_group    g2                3               2/0/1/0
+    ==================================================================
     ```
 + Response 200 (application/json)
 
@@ -561,7 +531,8 @@ HOST: http://192.168.100.100/api/v1/
                     "MEMBER_COUNT" : "4",
                     "TRM_COUNT" : "4",
                     "INIT_COUNT" : "0",
-                    "ACT_COUNT" : "0"
+                    "ACT_COUNT" : "0",
+                    "ABN_COUNT" : "0"
                 },
                 {
                     "GROUP_ID" : "g2",
@@ -571,7 +542,8 @@ HOST: http://192.168.100.100/api/v1/
                     "MEMBER_COUNT" : "3",
                     "TRM_COUNT" : "2",
                     "INIT_COUNT" : "0",
-                    "ACT_COUNT" : "1"
+                    "ACT_COUNT" : "1",
+                    "ABN_COUNT" : "0"
                 },
             ...
             ...
@@ -612,7 +584,19 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf group info --group_id {g1} 
     ```
-
+- example
+    ```
+    node 01 $ wf group info --group_id g1
+    =========================================================================
+    group_name      group_id       member_type      member_name     member_id
+    
+    rnc01           g1               flow               flow01          f1
+    rnc01           g1               flow               flow02          f2
+    rnc01           g1               flow               flow03          f3
+    rnc01           g1               task               task01          t1
+    =========================================================================
+    ```
+    
 + Response 200 (application/json)
 
 
@@ -712,6 +696,7 @@ HOST: http://192.168.100.100/api/v1/
 ### group 상태 조회 - GET [GET]
 
 - group에 속한 모든  task의 상태를 조회
+    - flow가 멤버일 경우 해당 flow에 속하는 task 상태 표시 ??
 - CLI
     ```
     $wf group status --group_id {g1}
@@ -720,14 +705,14 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node 01 $ wf group status --group_id g1
-    ====================================================================================================================
-    group_name      group_id        member_type       member_name          member_id      status       last_update_time
+    =================================================================================================================================
+    group_name      group_id        member_type       member_name          member_id      status    last_exit_code  last_update_time
     
-    rnc01           g1              task              get_ftp_rnc01         t1           trm           20181117125630
-    rnc01           g1              task              trans                 t2           trm           20181117125630
-    rnc01           g1              task              parser                t3           trm           20181117125630
-    rnc01           g1              task              loader                t4           trm           20181117125630
-    ====================================================================================================================
+    rnc01           g1              task              get_ftp_rnc01         t1           trm          1             20181117125630
+    rnc01           g1              task              trans                 t2           trm          1             20181117125630
+    rnc01           g1              task              parser                t3           trm          1             20181117125630
+    rnc01           g1              task              loader                t4           trm          1             20181117125630
+    =================================================================================================================================
     ```
 + Response 200 (application/json)
 
@@ -739,10 +724,11 @@ HOST: http://192.168.100.100/api/v1/
             "MEMBERS" :
             {
                 {
-                    "MEMBER_TYPE" : "FLOW",
-                    "MEMBER_NAME" : "flow01",
-                    "MEMBER_ID" : "f1",
+                    "MEMBER_TYPE" : "TASK",
+                    "MEMBER_NAME" : "task01",
+                    "MEMBER_ID" : "t1",
                     "MEMBER_STATUS" : "trm",
+                    "LAST_EXIT_CODE" : "1",
                     "LAST_UPDATE_TIME" : "20181117125630"
                 },
                 {
@@ -750,6 +736,7 @@ HOST: http://192.168.100.100/api/v1/
                     "MEMBER_NAME" : "parse_task",
                     "MEMBER_ID" : "t2",
                     "MEMBER_STATUS" : "trm",
+                    "LAST_EXIT_CODE" : "1",
                     "LAST_UPDATE_TIME" : "20181117125630"
                 },
                 ...
@@ -768,11 +755,11 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node01 $ wf flow list
-    ==============================================================================================================================
-    flow_name       flow_id     member_count        trm/init/act        is_splitted        input_msg_count       output_msg_count
+    =================================================================================================================================
+    flow_name       flow_id     member_count        trm/init/act/abn        is_splitted        input_msg_count       output_msg_count
     
-    flow_rnc01        f1            5                  1/0/4                True                 0                     1000    
-    ==============================================================================================================================
+    flow_rnc01        f1            5                  1/0/4/0                True                 0                     1000    
+    =================================================================================================================================
     ```
         
 + Response 200 (application/json)
@@ -787,6 +774,7 @@ HOST: http://192.168.100.100/api/v1/
                     "INIT_COUNT" : "0",
                     "ACT_COUNT" : "4",
                     "TRM_COUNT" : "1",
+                    "ABN_COUNT" : "0",
                     
                     "IS_SPLITTED" : "True",
                     
@@ -834,7 +822,22 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf flow info --flow_id {f1}
     ```
-
+- example
+    ```
+    node01 $ wf flow info --flow_id f1
+    =============================================================================
+    sequne  flow_name       flow_id     member_type     member_name   member_id     
+                                                                                                           
+    1        flow_rnc01        f1          task      get_ftp_rnc01    t1               
+    2        flow_rnc01        f1          task      parser           t2              
+    3        flow_rnc01        f1          task      trnas            t3               
+    4        flow_rnc01        f1          task      loader           t4             
+    
+    None     flow_rnc01        f1          arrow      ar1             a1                                                                      
+    None     flow_rnc01        f1          arrow      ar2             a2                                                                        
+    None     flow_rnc01        f1          arrow      ar3             a3                                                                      
+    ==============================================================================
+    ```
 
 + Response 200 (application/json)
 
@@ -851,6 +854,7 @@ HOST: http://192.168.100.100/api/v1/
                         "TASK_NAME" : "task01",
                         "TASK_ID" : "t5",
                         "TASK_URL" : "http://192.168.100.100/api/v1/tasks/t5"
+                        "SEQUENCE" : "1"
                     },
                     ...
                 },
@@ -956,16 +960,16 @@ HOST: http://192.168.100.100/api/v1/
     ```
     node01 $ wf flow status --flow_id f1
     =============================================================================================================================
-    sequne  flow_name       flow_id     member_type     member_name   member_id    status  last_update_time  input_msg_count output_msg_count   output_type  arrow
+    sequne  flow_name       flow_id     member_type     member_name   member_id    status  last_exit_code   last_update_time  input_msg_count output_msg_count   output_type  arrow
                                                                                                            
-    1        flow_rnc01        f1          task      get_ftp_rnc01    t1            act     20181211100523     0         10020       broad    
-    2        flow_rnc01        f1          task      parser           t2            trm     20181211100523     0          0         broad   
-    3        flow_rnc01        f1          task      trnas            t3            act     20181211100523     0           0         broad    
-    4        flow_rnc01        f1          task      loader           t4            act     20181211100523     0           0         broad    
+    1        flow_rnc01        f1          task      get_ftp_rnc01    t1            act     1               20181211100523        0         10020                   broad    
+    2        flow_rnc01        f1          task      parser           t2            trm     1               20181211100523        0          0                      broad   
+    3        flow_rnc01        f1          task      trnas            t3            act     1               20181211100523        0           0                     broad    
+    4        flow_rnc01        f1          task      loader           t4            act     1               20181211100523        0           0                     broad    
     
-    None     flow_rnc01        f1          arrow      ar1             a1            None                                                                t1 -> t2    
-    None     flow_rnc01        f1          arrow      ar2             a2            None                                                                t2 -> t3    
-    None     flow_rnc01        f1          arrow      ar3             a3            None                                                                t3 -> t4    
+           flow_rnc01        f1          arrow      ar1             a1                                                                                                  t1 -> t2    
+           flow_rnc01        f1          arrow      ar2             a2                                                                                                  t2 -> t3    
+           flow_rnc01        f1          arrow      ar3             a3                                                                                                  t3 -> t4    
     ==============================================================================================================================
     ```
 + Response 200 (application/json)
@@ -985,6 +989,7 @@ HOST: http://192.168.100.100/api/v1/
                             "TASK_NAME" : "get_ftp_rnc01",
                             "TASK_ID" : "t1",
                             "TASK_STATUS" : "act",
+                            "LAST_EXIT_CODE" : "1",
                             "LAST_UPDATE_TIME" : "20181211100523",
                             "INPUT_MSG_COUNT" : "0",
                             "OUTPUT_MSG_COUNT" : "10020",
@@ -1019,14 +1024,14 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node 01 $ wf task list
-    ============================================================================================================
-    engine_name     engine_id       task_name       task_id     flow_id   group_id    status    last_update_time
+    =============================================================================================================================
+    engine_name     engine_id       task_name       task_id     flow_id   group_id    status    last_exit_code  last_update_time
     
-    test_engine        e1         get_ftp_rnc01     t1          None       g1       act        20180703121103
-    test_engine        e1         parser            t2          None       g1       act        20180703121103
-    test_engine        e1         trans             t3          None       g1       act        20180703121103
-    test_engine        e1         loader            t4          None       g1       act        20180703121103
-    ============================================================================================================
+    test_engine        e1         get_ftp_rnc01     t1          None       g1       act             1            20180703121103
+    test_engine        e1         parser            t2          None       g1       act             1            20180703121103
+    test_engine        e1         trans             t3          None       g1       act             1            20180703121103
+    test_engine        e1         loader            t4          None       g1       act             9            20180703121103
+    ==============================================================================================================================
     ```
     
 + Request (application/json)
@@ -1053,6 +1058,7 @@ HOST: http://192.168.100.100/api/v1/
                 "FLOW_ID" : "None",
                 
                 "TASK_STATUS" : "act",
+                "LAST_EXIT_CODE" : "1",
                 "LAST_UPDATE_TIME" : "20180703121103"
            },
            ...
@@ -1105,7 +1111,23 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf task info --task_id {t1} 
     ```
-
+- example
+    ```
+    node 01 $ wf task info --task_id t1
+    =======================================
+    engine_name     test_engine 
+    engine_id       e1
+    task_name       engine01
+    task_id         t1
+    flow_id         None
+    group_id        g1
+    is_daemon       false    
+    output_type     broad
+    command         "python parser.py arg1" 
+    description     "this is parser"
+    ========================================
+    ```
+    
 + Response 200 (application/json)
 
 
@@ -1114,14 +1136,14 @@ HOST: http://192.168.100.100/api/v1/
                 "ENGINE_ID" : "e1",
                 "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/e1",
                 
-                "GROUP_ID" : "None",
-                "FLOW_ID" : "f1"
-                
                 "TASK_NAME" : "task01",
                 "TASK_ID" : "t1",
                 "TASK_URL" : "http://192.168.100.100/api/v1/tasks/t1",
                 "CREATE_TIME": "20180707111111",
                 "UPDATE_TIME" : "20180804112230",
+                
+                "GROUP_ID" : "None",
+                "FLOW_ID" : "f1",
                 
                 "IS_DAEMON" : "False",
                 "OUTPUT_TYPE" : "broad"
@@ -1213,6 +1235,24 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf task status --task_id {t1} (--resource)
     ```
+- example
+    ```
+    node 01 $ wf task status --task_id t1
+    =====================================
+    task_name           engine01
+    task_id             t1
+    status              act
+    last_exit_code      1
+    last_update_time    20180703121103
+    act_count           523
+    pid                 1234
+    memory              10
+    disk_io             1
+    network_io          1
+    file_count          10
+    thread_count        5
+    ======================================
+    ```
 
 + Response 200 (application/json)
 
@@ -1227,8 +1267,8 @@ HOST: http://192.168.100.100/api/v1/
                 "TASK_URL" : "http://192.168.100.100/api/v1/tasks/t1",
                 
                 "TASK_STATUS" : "act",
-                "LAST_UPDATE_TIME" : "20181111000000"
-                "JOB_REGISTERED": "True",
+                "LAST_EXIT_CODE" : "1",
+                "LAST_UPDATE_TIME" : "20181111000000",
                 "ACT-COUNT" : "523",
                 
                 (
