@@ -100,7 +100,7 @@ HOST: http://192.168.100.100/api/v1/
                     "PORT" : "5000",
                     "ENGINE_NAME": "test01",
                     "ENGINE_ID" : "e1",
-                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
+                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/e1",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -110,7 +110,7 @@ HOST: http://192.168.100.100/api/v1/
                     "PORT" : "5002",
                     "ENGINE_NAME" : "test02",
                     "ENGINE_ID" : "e2",
-                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
+                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/e2",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -338,7 +338,7 @@ HOST: http://192.168.100.100/api/v1/
                {
                    "JOB_NAME" : "parsing_job",
                    "JOB_ID" : "j1",
-                   "JOB_URL" : "http://192.168.100.100/api/v1/jobs/{job_id}",
+                   "JOB_URL" : "http://192.168.100.100/api/v1/jobs/j1",
                    
                    "MEMBERS" : "t1,t2,f3",
                    "CONTROL" : "act",
@@ -499,8 +499,8 @@ HOST: http://192.168.100.100/api/v1/
            {
                 "JOB_ID" : "j1",
                 "JOB_NAME" : "etl_job01",
-                "JOB_URL" : "http://192.168.100.100/api/v1/{flow_id}/jobs/{job_id}",
-                "JOB_STATUS" : "[enabled|disabled]"
+                "JOB_URL" : "http://192.168.100.100/api/v1/jobs/j1",
+                "JOB_STATUS" : "enabled"
            }
 
 
@@ -517,10 +517,8 @@ HOST: http://192.168.100.100/api/v1/
 + Response 200 (application/json)
 
         {
-               "JOBS" : {
-                * job 통계 정보
+            * job 통계 정보
                 생성자, 실행자, 변경 history, 실행 결과 history 등
-               }
         }
 
 
@@ -534,14 +532,24 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf group list
     ```
+- example
+    ```
+    node 01 $ wf group list
+    ==================================================================
+    group_name      group_id       member_count         trm/init/act
+    
+    rnc01           g1                4                  4/0/0
+    parser_group    g2                3                  2/0/1
+    ===================================================================
+    ```
 + Response 200 (application/json)
 
         {
                
                 {
                     "GROUP_ID" : "g1",
-                    "GROUP_NAME" : "etl_group01",
-                    "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
+                    "GROUP_NAME" : "rnc01",
+                    "GROUP_URL" : "http://192.168.100.100/api/v1/groups/g1",
                     
                     "MEMBER_COUNT" : "4",
                     "TRM_COUNT" : "4",
@@ -551,7 +559,7 @@ HOST: http://192.168.100.100/api/v1/
                 {
                     "GROUP_ID" : "g2",
                     "GROUP_NAME" : "parser_group",
-                    "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
+                    "GROUP_URL" : "http://192.168.100.100/api/v1/groups/g2",
                     
                     "MEMBER_COUNT" : "3",
                     "TRM_COUNT" : "2",
@@ -571,13 +579,13 @@ HOST: http://192.168.100.100/api/v1/
 - group_id 반환
 - CLI
     ```
-    $wf group create --group_name {etl_group01} ([--tasks {t1, t3} | --flows {f1, f2}])
+    $wf group create --group_name {rnc01} (--members t1,t2,f3)
    
 + Request (application/json)
 
         {
-               "GROUP_NAME": "etl_group01",
-               ("TASKS" : "t1, t3")
+               "GROUP_NAME": "rnc01",
+               ("MEMBERS" : "t1,t2,f3")
         }
         
 
@@ -597,20 +605,41 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf group info --group_id {g1} 
     ```
+- example
+    ```
+    node 01 $ wf group info --group_id g1
+    =========================================================================================================
+    group_name      group_id        member_type         member                  status      last_update_time
+    
+    rnc01           g1              task              get_ftp_rnc01           trm           20181117125630
+    rnc01           g1              task              trans                   trm           20181117125630
+    rnc01           g1              task              parser                  trm           20181117125630
+    rnc01           g1              task              loader                  trm           20181117125630
+    =========================================================================================================
+    ```
 + Response 200 (application/json)
 
 
         {
             "GROUP_ID" : "g1",
-            "GROUP_NAME" : "etl_group01",
-            "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
+            "GROUP_NAME" : "rnc01",
+            "GROUP_URL" : "http://192.168.100.100/api/v1/groups/g1",
             
             "MEMBERS" :
             {
                 {
-                    "MEMBER_TYPE" : "[TASK|FLOW]",
+                    "MEMBER_TYPE" : "FLOW",
                     "MEMBER_NAME" : "flow01",
-                    "MEMBER_STATUS" : ...
+                    "MEMBER_ID" : "f1",
+                    "MEMBER_STATUS" : "trm",
+                    "LAST_UPDATE_TIME" : "20181117125630"
+                },
+                {
+                    "MEMBER_TYPE" : "TASK",
+                    "MEMBER_NAME" : "parse_task",
+                    "MEMBER_ID" : "t2",
+                    "MEMBER_STATUS" : "trm",
+                    "LAST_UPDATE_TIME" : "20181117125630"
                 },
                 ...
         }
@@ -620,16 +649,23 @@ HOST: http://192.168.100.100/api/v1/
 - group_contents 수정 가능
 - CLI
     ```
-    $wf group update --group_id {g1} --key {key} --value {value}
+    $wf group update --group_id {g1} --key {value}
     ```
+- update를 통해 group에 등록된 members에 flow|task 추가|삭제 가능
+    - flow_add|task_add를 통해 member 추가
+    - flow_remove|task_remove를 통해 meber 삭제
+- example
+    ```
+    node01 $ wf group update --group_id g1 task_add t5
+    +OK task "t5" is added on group "g1".
+    ```
+
 
 + Request (application/json)
 
         {
                {
-                   * group 수정 사항
-                   "KEY" : "[변경하고자 하는 KEY]",
-                   "VALUE" : "[변경하고자 하는 VALUE]"
+                   "TASK_ADD" : "t5"
                }
         }
         
