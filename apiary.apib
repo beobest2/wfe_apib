@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: http://192.168.100.180/api/v1/
+HOST: http://192.168.100.100/api/v1/
 
 # WFE (Work Flow Engine)
 
@@ -9,17 +9,18 @@ HOST: http://192.168.100.180/api/v1/
     - manager가 관리하는 데이터베이스
         - config_db
         - engine_db
-            - engine_id | engine_name | ip | port
-        - group_db
-            - group_id | group_name | member
-        - flow_db
-            - flow_id | flow_name | member
+            - engine_id | engine_name | ip | port |
         - job_db
-            - job_id | job_name | member
-        - arrow_db
-            - arrow_id | arrow_name | flow_id | arrow_type | arrow
+            - job_id | job_name | members | control | schedule | 
+        - group_db
+            - group_id | group_name | members | job_id |
+        - flow_db
+            - flow_id | flow_name | members | job_id | group_id |
         - task_db
-            - task_id | task_name | engine_id | flow_id | group_id | command | is_daemon | output_type | description
+            - task_id | task_name | command | is_daemon | output_type | description | engine_id | job_id | group_id | flow_id | 
+        - arrow_db
+            - arrow_id | arrow_name | arrow_type | arrow | flow_id | 
+        
 - Workflow-Engine
     - 실제 task를 띄우고 실행시키는 엔진
     - Task-agent 와 Task-monitor로 구성
@@ -29,12 +30,12 @@ HOST: http://192.168.100.180/api/v1/
     - 작업을 특정 시간 주기로 실행하기 위해 crontab에 등록
         - task, flow, group 등록 가능
         - 각기 다른 engine의 task, flow, group끼리 등록 가능
-    - manager node에서 crontab이 등록되어 실제 동작은 engine에서 수행
+    - manager에서 crontab이 등록되어 실제 동작은 각 engine에서 수행
     - job 개별적 제어 가능
         - 제어 : enable | disable
         - 상태 : enabled | disabled
 - Group
-    - 동시 control를 위한, 사용자가 지정하는 task 또는 flow 집합
+    - 동시 control을 위한, 사용자가 지정하는 task 또는 flow 집합
     - 각기 다른 engine의 task, flow 끼리 등록 가능
 - Flow
     - 프로세스와 프로세스를(Task) 연결하는 흐름
@@ -48,15 +49,20 @@ HOST: http://192.168.100.180/api/v1/
     - 하나의 프로세스를 의미
     - 하나의 프로세스에서 하나 이상의 작업 수행 가능
     - 모든 프로그래밍 언어 지원
+    - Workflow-Engine 에서 동작
     - output 메세지 전송 방식에 따라 broad, shared 두 가지 타입을 가짐
     - 동작 방식에 따라 Daemon, NoneDaemon 으로 구분됨
     - task 개별적인 실행 정지 control 가능
         - 상태 : init | act | trm | abn 
-        - 제어 : act  | term
+        - 제어 : act  | trm
+    - 비정상 종료시 retry여부 optional
 - Queue
     - Task간에 데이터가 공유되는 queue
     - 하나의 task는 input과 output 두가지의 queue를 가짐
     - 방향성 존재
+    - task 중단시 옵션으로 Queue의 데이터를 비우거나 disk에 dump/load 가능
+    - broad 방식의 task일 때 목적 task의 input queue에 데이터를 전송
+    - shared 방식의 task일 때 목적 task가 output queue에서 데이터를 번갈아가며 가져감
 - Arrow
     - task간의 데이터 연결 방식을 정의하는 단위
     - flow가 먼저 정해진 후에 arrow 등록
@@ -75,6 +81,15 @@ HOST: http://192.168.100.180/api/v1/
     ```
     $wf engine list
     ```
+- example
+    ```
+    node01 $ wf engine list
+    =========================================================================================
+    ip_addr             port     engine_name     engine_id   engine_status   last_update_time             
+    192.168.100.150     9292     test_engine      e1           valid          20181111000000
+    192.168.100.151     9393     test_engine2     e2           valid          20181111000000
+    =========================================================================================
+    ```
 
 + Response 200 (application/json)
 
@@ -85,7 +100,7 @@ HOST: http://192.168.100.180/api/v1/
                     "PORT" : "5000",
                     "ENGINE_NAME": "test01",
                     "ENGINE_ID" : "e1",
-                    "ENGHINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -94,7 +109,8 @@ HOST: http://192.168.100.180/api/v1/
                     "IP_ADDR" : "192.168.100.11",
                     "PORT" : "5002",
                     "ENGINE_NAME" : "test02",
-                    "ENGHINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                    "ENGINE_ID" : "e2",
+                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -109,9 +125,13 @@ HOST: http://192.168.100.180/api/v1/
     - 실제 engine이 동작하는지 IP, Port, ENGINE_NAME 중복여부 체크 후 리스트에 추가
 - CLI
     ```
-    $wf engine create --engine_name {engine01} --ip {192.168.100.11} --port {3500}
+    $wf engine create --engine_name {test_engine} --ip {192.168.100.150} --port {9292}
     ``` 
-    
+- example
+    ```
+    node01 $ wf engine create –engine_name test_engine -ip 192.168.100.150 –port 9292
+    +OK test_engine add (engine_id : e3)
+    ```
     
 + Request (application/json)
 
@@ -127,7 +147,7 @@ HOST: http://192.168.100.180/api/v1/
         {
             "RESULT" : "[OK|NOK]",
             "ENGINE_ID" : "e3",
-            "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"           
+            "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"
         }
 
         
@@ -139,13 +159,33 @@ HOST: http://192.168.100.180/api/v1/
 - resource 옵션을 통해 engine에서 돌아가는 task의 resource별 sum 조회 가능
 - CLI
     ```
-    $wf engine info --engine_id {e1} (--resource {True|False})
+    $wf engine info --engine_id {e1} (--resource)
+    ```
+- example
+    ```
+    node01 $ wf engine info --engine_id e3 --resource
+    ===================================
+    ip_addr             192.168.100.150
+    port                9292
+    engine_name         test_engine
+    engine_id           e1
+    status              valid
+    last_update_time    20181111000000
+    num_of_task         10
+    num_of_active_task  6
+    cpu                 21
+    memory              17
+    disk_io             1
+    network_io          1
+    file_cnt            3
+    thread_cnt          4
+    ===================================
     ```
 
 + Request (application/json)
 
         {
-            **
+            ** optional
             "RESOURCE" : "True|False"
         }
         
@@ -157,14 +197,16 @@ HOST: http://192.168.100.180/api/v1/
             "PORT" : "5050",
             "ENGINE_STATUS" : "[VALID|INVALID|WAIT_RETRY]",
             "LAST_UPDATE_TIME" : "20181111000000",
-            "NUM_OF_TASK" : "5",
-            "NIM_OF_ACTIVE_TASK" : "2",
+            "NUM_OF_TASK" : "10",
+            "NUM_OF_ACTIVE_TASK" : "6",
             
             (
             "CPU": "23",
-            "RAM" : "30",
-            "DISK" : "11",
-            "IO_WAIT" : "1"
+            "MEMORY" : "30",
+            "DISK_IO" : "11",
+            "NETWORK_IO" : "1",
+            "FILE_CNT" : "3",
+            "THREAD_CNT" : "4"
             )
         }
 
@@ -175,6 +217,11 @@ HOST: http://192.168.100.180/api/v1/
     ```
     $wf engine del --engine_id {e1}
     ``` 
+- example
+    ```
+    node01 $ wf engine del –engine_id e3
+    +OK engine "e3" is deleted.
+    ```
         
 + Response 200 (application/json)
 
@@ -197,12 +244,9 @@ HOST: http://192.168.100.180/api/v1/
 
         {
     
-                * engine 통계 정보
-                    변경 history, 실행 결과 history 등
-            "CHANGE_HISTORY" : "",
-            "RESULT_HISTORY" : "",
+            * engine 통계 정보
+            변경 history, 실행 결과 history 등
             ...
-            
         }
 
             
@@ -214,7 +258,7 @@ HOST: http://192.168.100.180/api/v1/
 - CHANGEABLE 옵션을 주어 변경 가능 or 변경 불가능 옵션별 조회 가능
 - CLI
     ```
-    $wf config list (--engine_name {engine01}) (--changeable [True|Flase])
+    $wf config list (--engine_id {e1}) (--changeable [True|Flase])
     ```
 
 
@@ -222,7 +266,7 @@ HOST: http://192.168.100.180/api/v1/
 
         ** optional
         {
-            ("ENGINE_NAME" : "engine_name"),
+            ("ENGINE_ID" : "e1"),
             ("CHANGEABLE" : "[TRUE|FALSE]")
         }
         
@@ -247,14 +291,14 @@ HOST: http://192.168.100.180/api/v1/
 - CHANGEABLE이 TRUE인 설정만 변경 가능
 - CLI
     ```
-    $wf config update --{key} {value}
+    $wf config update --key {value}
     ```
 
 
 + Request (application/json)
 
            {
-               "KEY" : "VALUE"
+               "KEY" : "[변경하고자 하는 VALUE]"
            }
         
 
@@ -277,37 +321,50 @@ HOST: http://192.168.100.180/api/v1/
     ```
     $wf job list
     ```
-
+- example
+    ```
+    node01 $ wf job list
+    ===================================================================
+    job_name       job_id   members   control       schedule     status        
+    parsing_job     j1       t1,t3      act         */1 * * *    active
+    load_aaa01      j2       f1,t4      act         */5 * * *    inactive
+    ===================================================================
+    ```
         
 + Response 200 (application/json)
 
         {
            
                {
-                   "JOB_NAME" : "etl_job01",
-                   "JOB_ID" : "j1"
-                   "JOB_URL" : "http://192.168.100.180/api/v1/jobs/{job_id}",
+                   "JOB_NAME" : "parsing_job",
+                   "JOB_ID" : "j1",
+                   "JOB_URL" : "http://192.168.100.100/api/v1/jobs/{job_id}",
+                   
+                   "MEMBERS" : "t1,t2,f3",
+                   "CONTROL" : "act",
+                   "SCHEDULE" : "*/1 * * *",
+                   "STATUS" : "ACTIVE"
+                   
                },
                ...
-               
         }
 
 ### job 생성 - POST [POST]
 
 - job을 생성함, crontab에 등록됨
-- job이 등록될 engine, 등록할 작업(flow | group | task), job_name, schedule(cron) 시간 주기 입력
+- job이 등록될 engine, 등록할 작업(flow | group | task), job_name, schedule(시간 주기) 입력
 - job_id 반환
 - CLI
     ```
-    $wf job create --job_name {job01}  [--tasks {t1,t2} | --flows {f1} | --groups {g1}] --control [act|trm] --schedule {*/1 * * * *}
+    $wf job create --job_name {job01}  (--members {t1,t2,f4}) --control [act|trm] --schedule {*/1 * * * *}
     ```
     
 + Request (application/json)
 
         {
                 "JOB_NAMR" : "job01",
-                ["TASKS" : "t1,t2" | "FLOWS": "f1" | "GROUPS" : "g1"],
-                "CONTROL" : "[act|trm]"
+                "MEMBERS" : "t1,t2,f4",
+                "CONTROL" : "act"
                 "SCHEDULE": "*/1 * * * *"
         }
         
@@ -318,7 +375,7 @@ HOST: http://192.168.100.180/api/v1/
                "RESULT" : "[OK|NOK]",
                "JOB_ID" : "j1"
                "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
-           }    
+           }
 
         
 ## Job [/jobs/{job_id}]
@@ -334,26 +391,22 @@ HOST: http://192.168.100.180/api/v1/
 
 
            {
+               "JOB_NAME" : "parsing_job",
                "JOB_ID" : "j1",
-               "JOB_NAME" : "etl_job01",
-               "JOB_URL" : "http://192.168.100.180/api/v1/jobs/{job_id}",
+               "JOB_URL" : "http://192.168.100.100/api/v1/jobs/j1",
+               
+               "MEMBERS" : "t1,t2,f3",
+               "CONTROL" : "act",
+               "SCHEDULE" : "*/1 * * *",
+               "STATUS" : "ACTIVE",
                
                "CREATE_TIME": "20180707111111", 
                "UPDATE_TIME": "20180707111111",
                "LAST_EXECUTE_TIME": "20180707111122", 
                
-               "JOB_STATUS": "[ENABLE|DISABLE]",
+               "JOB_STATUS": "ENABLE",
                
-                "JOB_CONTENTS" :
-                   {
-                   
-                        "FLOW_NAME" : "flow01",
-                        "FLOW_ID" : "f1",
-                        "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}"
-                   }
-               ,
-               "TIME_FORMAT" : "*/1 * * * *",
-               "CALL_BACK_URL" : "192.168.123.123"
+               "CALL_BACK_URL" : "192.168.123.123/jobs/??"
            }
            
 ### job 상태 변경 - PUT [PUT]
@@ -364,19 +417,19 @@ HOST: http://192.168.100.180/api/v1/
     ```
     $wf job update --job_id {j1} --schedule {*/10 * * * *}
     ```
-- update를 사용하여 group|task|flow를 job에 추가 또는 제거 가능
-    - group_add, task_add, flow_add를 사용하여 등록
-    - group_remove, task_remove, flow_remove를 사용하여 등록되어있는 member 제거
-- CLI
+- update를 통해 job에 등록된 members에 group|flow|task 추가|삭제 가능
+    - group_add|flow_add|task_add를 통해 member 추가
+    - group_remove|flow_remove|task_remove를 통해 meber 삭제
+- example
     ```
-    $wf job update --job_id {j1} --group_add {g1}
+    node01 $ wf job update --job_id j1 task_add t5
+    +OK task "t5" is added on job "j1".
     ```
-    
-    
+
 + Request (application/json)
            
             {   
-                "GROUP_ADD" : "g1"
+                "task_add" : "t5"
             }
            
 + Response 200 (application/json)
@@ -411,7 +464,7 @@ HOST: http://192.168.100.180/api/v1/
 - job 처음 생성 시 enable, 잠시 멈추고 싶을때 해당 명령어 사용
 - CLI
     ```
-    $wf job control [enable|disable] --job_id {j1}
+    $wf job control --job_id {j1} {[enable|disable]}
     ```
  
     
@@ -446,7 +499,7 @@ HOST: http://192.168.100.180/api/v1/
            {
                 "JOB_ID" : "j1",
                 "JOB_NAME" : "etl_job01",
-                "JOB_URL" : "http://192.168.100.180/api/v1/jobs/{job_id}",
+                "JOB_URL" : "http://192.168.100.100/api/v1/{flow_id}/jobs/{job_id}",
                 "JOB_STATUS" : "[enabled|disabled]"
            }
 
@@ -488,7 +541,7 @@ HOST: http://192.168.100.180/api/v1/
                 {
                     "GROUP_ID" : "g1",
                     "GROUP_NAME" : "etl_group01",
-                    "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
+                    "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
                     
                     "MEMBER_COUNT" : "4",
                     "TRM_COUNT" : "4",
@@ -498,7 +551,7 @@ HOST: http://192.168.100.180/api/v1/
                 {
                     "GROUP_ID" : "g2",
                     "GROUP_NAME" : "parser_group",
-                    "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
+                    "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
                     
                     "MEMBER_COUNT" : "3",
                     "TRM_COUNT" : "2",
@@ -550,7 +603,7 @@ HOST: http://192.168.100.180/api/v1/
         {
             "GROUP_ID" : "g1",
             "GROUP_NAME" : "etl_group01",
-            "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
+            "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
             
             "MEMBERS" :
             {
@@ -567,30 +620,26 @@ HOST: http://192.168.100.180/api/v1/
 - group_contents 수정 가능
 - CLI
     ```
-    $wf group update --group_id {g1} --key {value}
+    $wf group update --group_id {g1} --key {key} --value {value}
     ```
-- update를 사용하여 task|flow를 group에 추가 또는 제거 가능
-- task_add, flow_add를 사용하여 등록
-- task_remove, flow_remove를 사용하여 등록되어있는 member 제거
-- CLI
-    ```
-    $wf group update --group_id {g1} --task_add {t1}
-    ```
-    
-    
+
 + Request (application/json)
-           
-            {   
-                "TASK_ADD" : "t1"
-            }
-           
+
+        {
+               {
+                   * group 수정 사항
+                   "KEY" : "[변경하고자 하는 KEY]",
+                   "VALUE" : "[변경하고자 하는 VALUE]"
+               }
+        }
+        
 + Response 200 (application/json)
 
            {
                "RESULT" : "[OK|NOK]",
-               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
-           } 
-    
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+           
 
 ### group 삭제 - DELETE [DELETE]
     
@@ -646,7 +695,7 @@ HOST: http://192.168.100.180/api/v1/
             {
                 "GROUP_ID" : "g1",
                 "GROUP_NAME" : "etl_group01",
-                "GROUP_URL" : "http://192.168.100.180/api/v1/groups/{group_id}",
+                "GROUP_URL" : "http://192.168.100.100/api/v1/groups/{group_id}",
                 "GROUP_MEMBERS" : 
                    {
                             {   
@@ -670,6 +719,36 @@ HOST: http://192.168.100.180/api/v1/
             }
 
 
+## Group register [/group/{group_id}/register]
+
+### group을 job에 추가 또는 제거 - PUT [PUT]
+
+- group을 job에 추가 또는 제거
+- add 를 사용하여 등록 또는 remove를 사용하여 등록되어있는 group 제거
+- CLI
+    ```
+    $wf group register [add|remove] --group_id {g1} --job_id {j1}
+    ```
+    
+    
++ Request optional (application/json)
+
+        {
+            "GROUP_ID" : "g1",
+            "REGISTER" : "ADD",
+            "JOB_ID" : "j1"
+        }
+
+
++ Response 200 (application/json)
+
+           {
+               "RESULT" : "[OK|NOK]",
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"  
+            }
+  
+
+
 ## Flows [/flows]
 
 ### flow list 조회 - GET [GET]
@@ -687,7 +766,7 @@ HOST: http://192.168.100.180/api/v1/
                 {
                     "FLOW_ID" : "f1",
                     "FLOW_NAME": "happy_flow",
-                    "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+                    "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
                     
                     "MEMBER_COUNT" : "5",
                     "INIT_COUNT" : "0",
@@ -703,7 +782,7 @@ HOST: http://192.168.100.180/api/v1/
                 {
                     "FLOW_ID" : "f2",
                     "FLOW_NAME": "good_flow",
-                    "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+                    "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
                     
                     "MEMBER_COUNT" : "5",
                     "INIT_COUNT" : "0",
@@ -763,7 +842,7 @@ HOST: http://192.168.100.180/api/v1/
         {
             "FLOW_ID" : "f1",
             "FLOW_NAME": "happy_flow",
-            "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+            "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
             
             "FLOW_VALIDITY" : "[OK|SPLITTED]",
             "JOB_REGISTERED": "[True | False]",
@@ -776,43 +855,40 @@ HOST: http://192.168.100.180/api/v1/
                             {   
                                 "ENGINE_NAME" : "engine01",
                                 "ENGINE_ID" : "e1",
-                                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                                 
                                 "TASK_NAME" : "task01",
                                 "TASK_ID" : "t1",
-                                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}"
                             },
                         "task03":
                         {   "ENGINE_NAME" : "engine01",
                                 "ENGINE_ID" : "e1",
-                                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                                 
                                 "TASK_NAME" : "task03",
                                 "TASK_ID" : "t3",
-                                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}"
 
                         },
                         "task02":
                         {  
                                 "ENGINE_NAME" : "engine01",
                                 "ENGINE_ID" : "e1",
-                                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                                 
                                 "TASK_NAME" : "task02",
                                 "TASK_ID" : "t2",
-                                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}"
                         }
                 ],
                 
                 "ARROWS" : [
                     "arrow01":
                             {   
-                                "ARROW_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                "ARROW_URL" : "http://192.168.100.100/api/v1/arrows/a2"
                             },
-                    "arrow02":
-                            {   
-                                "ARROW_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
-                            }
+                    ...
                 ],
             },
             "CREATE_TIME": "20180707111111", 
@@ -828,31 +904,26 @@ HOST: http://192.168.100.180/api/v1/
 - task를 flow에 추가하는데 사용
 - CLI
     ```
-    $wf flow update --flow_id {f1} --key {value}
-    ```
-- update를 사용하여 task를 flow에 추가 또는 제거 가능
-- task_add를 사용하여 등록
-- task_remove를 사용하여 등록되어있는 member 제거
-- CLI
-    ```
-    $wf flow update --flow_id {f1} --task_add {t1}
+    $wf flow update --flow_id {f1} --key {key} --value {value}
     ```
     
-    
+
 + Request (application/json)
-           
-            {   
-                "TASK_ADD" : "t1"
-            }
-           
+
+           {
+               * flow 수정 사항
+               "KEY" : "[변경하고자 하는 KEY]",
+               "VALUE" : "[변경하고자 하는 VALUE]"
+           }
+
+        
 + Response 200 (application/json)
 
            {
-               "RESULT" : "[OK|NOK]",
-               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"
-           } 
-
-
+               "RESULT" : ["OK"|"NOK"],
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
+           }
+           
 ### flow 삭제 - DELETE [DELETE]
 
 - 해당 flow 등록 정보를 삭제함
@@ -913,7 +984,7 @@ HOST: http://192.168.100.180/api/v1/
             {
                 "FLOW_NAME": "happy_flow",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
                     
                 "MEMBER_COUNT" : "5",
                 "INIT_COUNT" : "0",
@@ -930,11 +1001,11 @@ HOST: http://192.168.100.180/api/v1/
                                     {   
                                         "ENGINE_NAME" : "engine01",
                                         "ENGINE_ID" : "e1",
-                                        "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                                        "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                                         
                                         "TASK_NAME" : "task01",
                                         "TASK_ID" : "t1",
-                                        "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                        "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}"
                                         "TASK_STATUS" : "[INIT|RUNNING|STOP]",
                                         "LAST_UPDATE_TIME" : "20181111000000",
                                        
@@ -948,11 +1019,11 @@ HOST: http://192.168.100.180/api/v1/
                                 "t3":
                                 {   "ENGINE_NAME" : "engine01",
                                         "ENGINE_ID" : "e1",
-                                        "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                                        "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                                         
                                         "TASK_NAME" : "task03",
                                         "TASK_ID" : "t3",
-                                        "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                        "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}"
                                         "TASK_STATUS" : "[INIT|RUNNING|STOP]",
                                         "LAST_UPDATE_TIME" : "20181111000000",
                                         "INPUT_MSG_COUNT" : "0",
@@ -963,14 +1034,14 @@ HOST: http://192.168.100.180/api/v1/
                                          "TASK_LEVEL" : "3"
                                 },
                                 "t2":
-                                { 
+                                {  
                                         "ENGINE_NAME" : "engine01",
                                         "ENGINE_ID" : "e1",
-                                        "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                                        "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                                         
                                         "TASK_NAME" : "task02",
                                         "TASK_ID" : "t2",
-                                        "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}"
+                                        "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}"
                                          "TASK_STATUS" : "[INIT|RUNNING|STOP]",
                                          "LAST_UPDATE_TIME" : "20181111000000",
                                          "INPUT_MSG_COUNT" : "0",
@@ -983,6 +1054,36 @@ HOST: http://192.168.100.180/api/v1/
             
             }
         
+
+## Flow register [/flows/{flow_id}/register]
+
+### flow를 group|job에 추가 또는 제거 - PUT [PUT]
+
+- flow를 group|job에 추가 또는 제거
+- add 를 사용하여 등록 또는 remove를 사용하여 등록되어있는 flow 제거
+- CLI
+    ```
+    $wf flow register [add|remove] --flow_id {f1} [--group_id {g1} | --job_id {j1}]
+    ```
+    
+    
++ Request optional (application/json)
+
+        {
+            "FLOW_ID" : "f1",
+            "REGISTER" : "ADD",
+            "GROUP_ID" : "g1"
+        }
+
+
++ Response 200 (application/json)
+
+           {
+               "RESULT" : "[OK|NOK]",
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"  
+            }
+
+
    
 ## Tasks [/tasks]
 
@@ -1008,11 +1109,11 @@ HOST: http://192.168.100.180/api/v1/
            {
                 "ENGINE_ID" : "e1",
                 "ENGINE_NAME" : "engine01",
-                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                 
                 "TASK_ID" : "t1",
                 "TASK_NAME" : "task01",
-                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}",
                 
                 "GROUP_ID" : "None",
                 "FLOW_ID" : "f1",
@@ -1077,14 +1178,14 @@ HOST: http://192.168.100.180/api/v1/
            {
                 "ENGINE_NAME" : "engine01",
                 "ENGINE_ID" : "e1",
-                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                 
                 "GROUP_ID" : "None",
                 "FLOW_ID" : "f1"
                 
                 "TASK_NAME" : "TASK_NAME",
                 "TASK_ID" : "t1",
-                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}",
                 
                 "TASK_LEVEL" : "2",
                 "IS_DAEMON" : "[True|False]",
@@ -1110,14 +1211,15 @@ HOST: http://192.168.100.180/api/v1/
 - task의 상세 정보를 변경
 - CLI
     ```
-    $wf task update --task_id {t1} --key {value}
+    $wf task update --task_id {t1} --key {key} --value {value}
     ```
 
 + Request (application/json)
 
         {
            {
-               "IS_DAEMON" : "False"
+               "KEY" : "IS_DAEMON",
+               "VALUE" : "False"
            },
            ...
         }
@@ -1194,11 +1296,11 @@ HOST: http://192.168.100.180/api/v1/
            {
                 "ENGINE_ID" : "e1",
                 "ENGINE_NAME" : "engine01",
-                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                 
                 "TASK_ID" : "t1",
                 "TASK_NAME" : "task01",
-                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}",
                 
                 "TASK_STATUS" : "[ACT|INIT|TRM|ABN]",
                 "LAST_UPDATE_TIME" : "20181111000000"
@@ -1220,11 +1322,11 @@ HOST: http://192.168.100.180/api/v1/
            {
                 "ENGINE_NAME": "engine01",
                 "ENGINE_ID" : "e1",
-                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                 
                 "TASK_NAME" : "task01",
                 "TASK_ID" : "t1",
-                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}",
                 
                 "PID" : "1234",
                 "CPU": "20",
@@ -1274,11 +1376,11 @@ HOST: http://192.168.100.180/api/v1/
            {
                 "ENGINE_NAME": "engine01",
                 "ENGINE_ID" : "e1",
-                "ENGINE_URL" : "http://192.168.100.180/api/v1/engines/{engine_id}",
+                "ENGINE_URL" : "http://192.168.100.100/api/v1/engines/{engine_id}",
                 
                 "TASK_NAME" : "task01",
                 "TASK_ID" : "t1",
-                "TASK_URL" : "http://192.168.100.180/api/v1/tasks/{task_id}",
+                "TASK_URL" : "http://192.168.100.100/api/v1/tasks/{task_id}",
                 
                 "TASK_QUEUE" : 
                     {
@@ -1333,6 +1435,36 @@ HOST: http://192.168.100.180/api/v1/
                "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"  
             }
 
+
+## Task register [/tasks/{task_id}/register]
+
+### task를 group|job|flow에 추가 또는 제거 - PUT [PUT]
+
+- task를 group|job|flow에 추가 또는 제거
+- add 를 사용하여 등록 또는 remove를 사용하여 등록되어있는 task 제거
+- CLI
+    ```
+    $wf task register [add|remove] --task_id {t1} [--group_id {g1} | --job_id {j1} | --flow_id {f1}]
+    ```
+    
+    
++ Request (application/json)
+
+        {
+            "TASK_ID" : "t1",
+            "REGISTER" : "ADD",
+            "GROUP_ID" : "g1"
+        }
+        
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : "[OK|NOK]",
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"  
+            }
+
+
     
 ## Arrows [/arrows]
 
@@ -1360,21 +1492,21 @@ HOST: http://192.168.100.180/api/v1/
 
                 "FLOW_NAME" : "flow01",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
                 
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a1",
-                "ARROW_URL" : "http://192.168.100.180/api/v1/arrows/{arrow_id}"
+                "ARROW_URL" : "http://192.168.100.100/api/v1/arrows/{arrow_id}"
             },
              {
 
                 "FLOW_NAME" : "flow01",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
                 
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a2",
-                "ARROW_URL" : "http://192.168.100.180/api/v1/arrows/{arrow_id}"
+                "ARROW_URL" : "http://192.168.100.100/api/v1/arrows/{arrow_id}"
             },
             ...
         }
@@ -1427,11 +1559,11 @@ HOST: http://192.168.100.180/api/v1/
                 
                 "FLOW_NAME" : "flow01",
                 "FLOW_ID" : "f1",
-                "FLOW_URL" : "http://192.168.100.180/api/v1/flows/{flow_id}",
+                "FLOW_URL" : "http://192.168.100.100/api/v1/flows/{flow_id}",
                 
                 "ARROW_NAME" : "ARROW_NAME",
                 "ARROW_ID" : "a1",
-                "ARROW_URL" : "http://192.168.100.180/api/v1/arrows/{arrow_id}"
+                "ARROW_URL" : "http://192.168.100.100/api/v1/arrows/{arrow_id}"
             
                 "ARROW" : "t1 -> t2"
             }
@@ -1445,14 +1577,15 @@ HOST: http://192.168.100.180/api/v1/
     - arrow
 - CLI
     ```
-    $wf arrow update --arrow_id {a1} --key {value}
+    $wf arrow update --arrow_id {a1} --key {arrow} --value {t1->t3}
     ```
 
 + Request (application/json)
 
            {
                * arrow 수정 사항
-               "arrow" : "t1->t3"
+               "KEY" : "arrow",
+               "VALUE" : "t1->t3"
            }
         
 
