@@ -116,7 +116,7 @@ HOST: http://192.168.100.100/api/v1/
     - 실제 engine이 동작하는지 IP, Port, ENGINE_NAME 중복여부 체크 후 리스트에 추가
 - CLI
     ```
-    $wf engine create --engine_name {test_engine} --ip {192.168.100.150} --port {9292}
+    $wf engine create --engine_name {engine_name} --ip {ip_addr} --port {port}
     ``` 
 - example
     ```
@@ -150,7 +150,7 @@ HOST: http://192.168.100.100/api/v1/
 - resource 옵션을 통해 engine에서 돌아가는 task의 resource별 sum 조회 가능
 - CLI
     ```
-    $wf engine info --engine_id {e1} (--resource)
+    $wf engine info --engine_id {engine_id} (--resource)
     ```
 - example
     ```
@@ -177,7 +177,7 @@ HOST: http://192.168.100.100/api/v1/
 
         {
             ** optional
-            "RESOURCE" : "True|False"
+            ("RESOURCE" : "True|False")
         }
         
 + Response 200 (application/json)
@@ -206,11 +206,11 @@ HOST: http://192.168.100.100/api/v1/
 - 등록된 engine 정보를 삭제함
 - CLI
     ```
-    $wf engine delete --engine_id {e1}
+    $wf engine delete --engine_id {engine_id}
     ``` 
 - example
     ```
-    node01 $ wf engine delete –engine_id e3
+    node01 $ wf engine delete –-engine_id e3
     +OK engine "e3" is deleted.
     ```
         
@@ -228,7 +228,7 @@ HOST: http://192.168.100.100/api/v1/
 - Engine의 통계 정보를 받아옴 (global_queue)
 - CLI
     ```
-    $wf engine statistic --engine_id {e1}
+    $wf engine statistic --engine_id {engine_id}
     ```
     
 + Response 200 (application/json)
@@ -249,30 +249,73 @@ HOST: http://192.168.100.100/api/v1/
 - CHANGEABLE 옵션을 주어 변경 가능 or 변경 불가능 옵션별 조회 가능
 - CLI
     ```
-    $wf config list (--engine_id {e1}) (--changeable [True|Flase])
+    $wf config list (--changeable [True|Flase])
     ```
-
+- example
+    ```
+    node01 $ wf config list
+    ===========================================================================
+    config_key              config_value                            changeable
+    
+    wfe_home                /home/wfe/WorkFlow/WorkFlowManager      False
+    dump_dir                /home/wfe/WorkFlow/WorkFlowManager/dmp  False
+    max_dequeue_size        1000                                    True
+    error_data_file_skip    False                                   True
+    kill_wait_time          10                                      True
+    event_save_file         /dev/null                               True
+    flask_port              5000                                    True
+    recovery_time_out       3600                                    True
+    recovery_delete_time    86400                                   True
+    ...
+    ===========================================================================
+    ```
 
 + Request optional (application/json)
 
         ** optional
         {
-            ("ENGINE_ID" : "e1"),
             ("CHANGEABLE" : "[TRUE|FALSE]")
         }
         
 + Response 200 (application/json)
 
         {
-
-           {
-               "KEY" : "[KEY_STRING]",
-               "VALUE" : "[VALUE_STRING]",
-               "CHANGEABLE" : "[True|False]"
-           }
-           ,
-           ...
-           
+            {
+                "WFE_HOME" : "/home/wfe/WorkFlow/WorkFlowManager",
+                "CHANGEABLE" : "False"
+            },
+            {
+                "DUMP_DIR" : "/home/wfe/WorkFlow/WorkFlowManager/dmp",
+                "CHANGEABLE" : "False"
+            },
+            {
+                "MAX_DEQUEUE_SIZE" : "1000",
+                "CHANGEABLE" : "True"
+            },
+            {
+                "ERROR_DATA_FILE_SKIP" : "False",
+                "CHANGEABLE" : "True"
+            },
+            {
+                "KILL_WAIT_TIME" : "10",
+                "CHANGEABLE" : "True"
+            },
+            {
+                "EVENT_SAVE_FILE" : "/dev/null",
+                "CHANGEABLE" : "True"
+            },
+            {
+                "FLASK_PORT" : "5000",
+                "CHANGEABLE" : "True"
+            },
+            {
+                "RECOVERY_TIME_OUT" : "3600",
+                "CHANGEABLE" : "True"
+            },
+            {
+                "RECOVERY_DELETE_TIME" : "86400",
+                "CHANGEABLE" : "True"
+            }
         }
         
 
@@ -284,7 +327,11 @@ HOST: http://192.168.100.100/api/v1/
     ```
     $wf config update --key {value}
     ```
-
+- example
+    ```
+    node01 $ wf config update –-flask_port 5050
+    +OK config is updated.
+    ```
 
 + Request (application/json)
 
@@ -348,9 +395,14 @@ HOST: http://192.168.100.100/api/v1/
 - job_id 반환
 - CLI
     ```
-    $wf job create --job_name {job01}  (--members {t1,t2,f4}) --schedule {*/1 * * * *}
+    $wf job create --job_name {job_name}  (--members {member_list}) --schedule {"cron_format"}
     ```
-    
+- example
+    ```
+    node01 $ wf job create --job_name job01  --members t1,t2,f4 --schedule "*/1 * * * *"
+    +OK job "j1" is created.
+    ```
+
 + Request (application/json)
 
         {
@@ -376,7 +428,7 @@ HOST: http://192.168.100.100/api/v1/
 - job list와 출력 결과 차이가 거의 없음 ??
 - CLI
     ```
-    $wf job info --job_id {j1}
+    $wf job info --job_id {job_id}
     ```
     
     
@@ -400,14 +452,14 @@ HOST: http://192.168.100.100/api/v1/
     - job contents 변경 가능
 - CLI
     ```
-    $wf job update --job_id {j1} --schedule {*/10 * * * *}
+    $wf job update --job_id {job_id} --{key} {value}
     ```
 - update를 통해 job에 등록된 members에 group|flow|task 추가|삭제 가능
     - group_add|flow_add|task_add를 통해 member 추가
     - group_remove|flow_remove|task_remove를 통해 meber 삭제
 - example
     ```
-    node01 $ wf job update --job_id j1 task_add t5
+    node01 $ wf job update --job_id j1 --task_add t5
     +OK task "t5" is added on job "j1".
     ```
 
@@ -430,9 +482,14 @@ HOST: http://192.168.100.100/api/v1/
 - 등록되어있는 job을 삭제함
 - CLI
     ```
-    $wf job delete --job_id {j1}
+    $wf job delete --job_id {job_id}
     ```
-        
+- example
+    ```
+    node01 $ wf job delete --job_id j1
+    +OK job "j1" is deleted.
+    ```
+
 + Response 200 (application/json)
 
            {
@@ -449,9 +506,13 @@ HOST: http://192.168.100.100/api/v1/
 - job 처음 생성 시 enable, 잠시 멈추고 싶을때 해당 명령어 사용
 - CLI
     ```
-    $wf job activity --job_id {j1} {[enable|disable]}
+    $wf job activity --job_id {job_id} {[enable|disable]}
     ```
- 
+ - example
+    ```
+    node01 $ wf job activity --job_id j1 disable
+    +OK job "j1" is disabled.
+    ```
     
 + Request (application/json)
 
@@ -474,7 +535,7 @@ HOST: http://192.168.100.100/api/v1/
 - Job 통계 정보를 받아옴
 - CLI
     ```
-    $wf job statistic --job_id {j1}
+    $wf job statistic --job_id {job_id}
     ```
     
 + Response 200 (application/json)
@@ -545,8 +606,14 @@ HOST: http://192.168.100.100/api/v1/
 - group_id 반환
 - CLI
     ```
-    $wf group create --group_name {rnc01} (--members t1,t2,f3)
-   
+    $wf group create --group_name {group_name} (--members {member_list})
+    ```
+- example
+    ```
+    node01 $ wf group create --group_name rnc01  --members t1,t2,f3
+    +OK group "g1" is created.
+    ```
+    
 + Request (application/json)
 
         {
@@ -569,7 +636,7 @@ HOST: http://192.168.100.100/api/v1/
 - group 상세 정보 조회
 - CLI
     ```
-    $wf group info --group_id {g1} 
+    $wf group info --group_id {group_id} 
     ```
 - example
     ```
@@ -614,14 +681,14 @@ HOST: http://192.168.100.100/api/v1/
 - group_contents 수정 가능
 - CLI
     ```
-    $wf group update --group_id {g1} --key {value}
+    $wf group update --group_id {g1} --{key} {value}
     ```
 - update를 통해 group에 등록된 members에 flow|task 추가|삭제 가능
     - flow_add|task_add를 통해 member 추가
     - flow_remove|task_remove를 통해 meber 삭제
 - example
     ```
-    node01 $ wf group update --group_id g1 task_add t5
+    node01 $ wf group update --group_id g1 --task_add t5
     +OK task "t5" is added on group "g1".
     ```
 
@@ -645,9 +712,14 @@ HOST: http://192.168.100.100/api/v1/
 - group  둥록 정보 삭제
 - CLI
     ```
-    $wf group delete --group_id {g1}
+    $wf group delete --group_id {group_id}
     ```
-           
+- example
+    ```
+    node01 $ wf group delete --group_id g1
+    +OK group "g1" is deleted.
+    ```
+    
 + Response 200 (application/json)
 
            {
@@ -662,9 +734,14 @@ HOST: http://192.168.100.100/api/v1/
 - group에 속한 모든  task의 상태를 한꺼번에 끄거나 킴
 - CLI
     ```
-    $wf group control {[act|term]} --group_id {g1}
+    $wf group control {[act|term]} --group_id {group_id}
     ```
-    
+- example
+    ```
+    node01 $ wf group control --group_id j1
+    +OK group "g1" is activated.
+    ```
+
 + Request (application/json)
        
             {
@@ -683,10 +760,10 @@ HOST: http://192.168.100.100/api/v1/
 ### group 상태 조회 - GET [GET]
 
 - group에 속한 모든  task의 상태를 조회
-    - flow가 멤버일 경우 해당 flow에 속하는 task 상태 표시 ??
+    - flow또는 group이 멤버일 경우 해당 flow에 속하는 task 실행상태 표시 ??
 - CLI
     ```
-    $wf group status --group_id {g1}
+    $wf group status --group_id {group_id}
     ```
 
 - example
@@ -780,7 +857,12 @@ HOST: http://192.168.100.100/api/v1/
     - optinal 하게 생성시 초기 등록할 task 목록 추가 가능
 - CLI
     ```
-    $wf flow create --flow_name {flow01} (--members {t1,t2})
+    $wf flow create --flow_name {flow_name} (--members {member_list})
+    ```
+- example
+    ```
+    node01 $wf flow create --flow_name flow01 --members t1,t2
+    +OK flow "f2" is created.
     ```
     
 
@@ -807,7 +889,7 @@ HOST: http://192.168.100.100/api/v1/
 - flow 상세 정보 조회
 - CLI
     ```
-    $wf flow info --flow_id {f1}
+    $wf flow info --flow_id {flow_id}
     ```
 - example
     ```
@@ -866,14 +948,14 @@ HOST: http://192.168.100.100/api/v1/
 - task를 flow에 추가하는데 사용
 - CLI
     ```
-    $wf flow update --flow_id {f1} --key {value}
+    $wf flow update --flow_id {flow_id} --{key} {value}
     ```
 - update를 통해 group에 등록된 members에 task 추가|삭제 가능
     - task_add를 통해 member 추가
     - task_remove를 통해 meber 삭제
 - example
     ```
-    node01 $ wf flow update --flow_id f1 task_add t5
+    node01 $ wf flow update --flow_id f1 --task_add t5
     +OK task "t5" is added on flow "f1".
     ```
 
@@ -899,7 +981,12 @@ HOST: http://192.168.100.100/api/v1/
     - flow가 현재 동작중인지 체크
 - CLI
     ```
-    $wf flow delete --flow_id {f1}
+    $wf flow delete --flow_id {flow_id}
+    ```
+- example
+    ```
+    node01 $ wf flow delete --flow_id f1
+    +OK flow "f1" is deleted.
     ```
         
 + Response 200 (application/json)
@@ -916,9 +1003,14 @@ HOST: http://192.168.100.100/api/v1/
 
 - CLI
     ```
-    $wf flow control [act|trm] --flow_id {f1}
+    $wf flow control [act|trm] --flow_id {flow_id}
     ```
-    
+- example
+    ```
+    node01 $ wf flow control trm --flow_id f1
+    +OK flow "f1" is terminated.
+    ```
+
     
 + Request (application/json)
         
@@ -941,7 +1033,7 @@ HOST: http://192.168.100.100/api/v1/
 - flow의 상태를 조회
 - CLI
     ```
-    $wf flow status --flow_id {f1}
+    $wf flow status --flow_id {flow_id}
     ```
 - example
     ```
@@ -1006,7 +1098,7 @@ HOST: http://192.168.100.100/api/v1/
 - 옵션을 통해 특정 엔진의 task 리스트만 조회 가능
 - CLI
     ```
-    $wf task list (--engine_id {e1})
+    $wf task list (--engine_id {engine_id})
     ```
 - example
     ```
@@ -1025,7 +1117,7 @@ HOST: http://192.168.100.100/api/v1/
 
         ** optional
         {
-            "ENGINE_ID" : "e1"
+            ("ENGINE_ID" : "e1")
         }
         
 + Response 200 (application/json)
@@ -1064,7 +1156,12 @@ HOST: http://192.168.100.100/api/v1/
 - task name 은 같은 engine내에서는 중복 불가
 - CLI
     ```
-    $wf task create --task_name {task01} --command {“python test01.py arg1”} --engine_id {e1}  (--output_type {broad}) (--is_daemon [True|False]) (--description {"this is .."})
+    $wf task create --task_name {task_name} --command {“command”} --engine_id {engine_id}  (--output_type {[broad|shared]}) (--is_daemon {[True|False]}) (--description "{description}")
+    ```
+- example
+    ```
+    node 01 $ wf task create --task_name task01 --command “python test01.py arg1” --engine_id e1  --output_type broad --is_daemon False --description "this is parser"
+    +OK task "t1" is created.
     ```
 
 + Request (application/json)
@@ -1096,7 +1193,7 @@ HOST: http://192.168.100.100/api/v1/
 - task 상세 정보 조회
 - CLI
     ```
-    $wf task info --task_id {t1} 
+    $wf task info --task_id {task_id} 
     ```
 - example
     ```
@@ -1144,7 +1241,12 @@ HOST: http://192.168.100.100/api/v1/
 - task의 상세 정보를 변경
 - CLI
     ```
-    $wf task update --task_id {t1} --key {value}
+    $wf task update --task_id {task_id} --{key} {value}
+    ```
+- example
+    ```
+    node 01 $ wf task update --task_id t1 --is_daemon False
+    +OK task "t1" is updated.
     ```
 
 + Request (application/json)
@@ -1173,7 +1275,12 @@ HOST: http://192.168.100.100/api/v1/
     - 현재 task가 속한 flow가 동작중인지 확인
 - CLI
     ```
-    $wf task delete --task_id {t1}
+    $wf task delete --task_id {task_id}
+    ```
+- example
+    ```
+    node 01 $ wf task delete --task_id t1
+    +OK task "t1" is delete.
     ```
 
 + Response 200 (application/json)
@@ -1191,7 +1298,12 @@ HOST: http://192.168.100.100/api/v1/
 - task의 상태를 act|trm 을 통해 동작 제어
 - CLI
     ```
-    $wf task control [act|trm] --task_id {t1}
+    $wf task control [act|trm] --task_id {task_id}
+    ```
+- example
+    ```
+    node 01 $ wf task control act --task_id t1
+    +OK task "t1" is activated.
     ```
     
 + Request (application/json)
@@ -1220,7 +1332,7 @@ HOST: http://192.168.100.100/api/v1/
 - resource option을 통해 task 기반 리소스 모니터링 가능
 - CLI
     ```
-    $wf task status --task_id {t1} (--resource)
+    $wf task status --task_id {task_id} (--resource)
     ```
 - example
     ```
@@ -1278,7 +1390,7 @@ HOST: http://192.168.100.100/api/v1/
 - follow 옵션을 통해 tail 처럼 실시간 조회 가능
 - CLI
     ```
-    $wf task log --task_id {t1} (--follow (DEFAULT:False))
+    $wf task log --task_id {tasK_id} (--follow)
     ```
 
 
@@ -1286,7 +1398,7 @@ HOST: http://192.168.100.100/api/v1/
 
            {
            ** optional
-               ("FOLLOW" : "True")
+               ("FOLLOW" : "True" (Default : False))
            }
            
 + Response 200 (application/json)
@@ -1303,9 +1415,19 @@ HOST: http://192.168.100.100/api/v1/
 - 해당 task의 모든 queue 정보를 가져옴
 - CLI
     ```
-    $wf task queue --task_id {t1}
+    $wf task queue --task_id {task_id}
     ```
+- example
+    ```
+    node 01 $ wf task queue --task_id t1
+    ================================================================================================
+    engine_name     engine_id       task_name       task_id     queue_type          data
     
+    test_engine        e1           task01            t1        input_queue         1,2,3,4, ...
+    test_engine        e1           task01            t1        output_queue        10,20,30,40 ...
+    ================================================================================================
+    ```
+
 + Response 200 (application/json)
 
            {
@@ -1335,9 +1457,14 @@ HOST: http://192.168.100.100/api/v1/
 - 해당 task의 stdin queue에 데이터를 넣음
 - CLI
     ```
-    $wf task queue put --task_id {task01} --data {data}
+    $wf task queue insert --task_id {task_id} --data {data}
     ```
-
+- example
+    ```
+    node 01 $ wf task queue insert --task_id t1 --data "10,35"
+    +OK data is inserted into task "t1".
+    ```
+    
 + Request (application/json)
 
         {
@@ -1356,7 +1483,12 @@ HOST: http://192.168.100.100/api/v1/
 - 해당 task의 queue에 저장되어있는 데이터를 비움
 - CLI
     ```
-    $wf task queue empty --task_id {task01}
+    $wf task queue empty --task_id {task_id}
+    ```
+- example
+    ```
+    node 01 $ wf task queue empty --task_id t1
+    +OK empty task "t1".
     ```
         
 + Response 200 (application/json)
@@ -1375,7 +1507,17 @@ HOST: http://192.168.100.100/api/v1/
 - engine 정보를 옵션으로 주어 해당 flow arrow 목록만 조회 가능
 - CLI
     ```
-    $wf arrow list (--flow_id {f1})
+    $wf arrow list (--flow_id {flow_id})
+    ```
+- example
+    ```
+    node 01 $ wf arrow list
+    =================================================================================
+    flow_name     flow_id       arrow_name       arrow_id     arrow         scope
+    
+    flow01          f1          arrow01             a1        t1->t2        global
+    flow02          f1          arrow02             a2        t2->t3        local
+    =================================================================================
     ```
 
 + Request optional (application/json)
@@ -1429,7 +1571,12 @@ HOST: http://192.168.100.100/api/v1/
     - arrow가 생성되거나 방향이 변경될때, 연결된 둘 중 하나의 task가 동작중이면 데이터를 보낸다
 - CLI
     ```
-    $wf arrow create --arrow_name {arrow01} --flow_id {f1} --arrow {t1->t2}
+    $wf arrow create --arrow_name {arrow_name} --flow_id {flow_id} --arrow {arrow}
+    ```
+- example
+    ```
+    node 01 $ wf arrow create --arrow_name arrow01 --flow_id f1 --arrow t1->t2
+    +OK arrow "a1" is created.
     ```
 
 + Request (application/json)
@@ -1458,8 +1605,24 @@ HOST: http://192.168.100.100/api/v1/
 - arrow 상세 정보 조회
 - CLI
     ```
-    $wf arrow info --arrow_id {a1}
+    $wf arrow info --arrow_id {arrow_id}
     ```
+- example
+    ```
+    node 01 $ wf arrow info --arrow_id a1
+    ================================
+    flow_name       flow01
+    flow_id         f1
+    arrow_name      arrow01
+    arrow_id        a1
+    create_time     20180504112230
+    update_time     20180504112230
+    arrow           t1->t2
+    scope           global
+    ================================
+    ```
+    
+    
 + Response 200 (application/json)
 
 
@@ -1488,8 +1651,14 @@ HOST: http://192.168.100.100/api/v1/
     - arrow
 - CLI
     ```
-    $wf arrow update --arrow_id {a1} --arrow {t1->t3}
+    $wf arrow update --arrow_id {arrow_id} --arrow {arrow}
     ```
+- example
+    ```
+    node 01 $ wf arrow update --arrow_id a1 --arrow t1->t3
+    +OK arrow "a1" is updated.
+    ```
+
 
 + Request (application/json)
 
@@ -1512,7 +1681,12 @@ HOST: http://192.168.100.100/api/v1/
     - 현재 arrow가 속한 flow가 동작중인지 확인
 - CLI
     ```
-    $wf arrow delete --arrow_id {a1}
+    $wf arrow delete --arrow_id {arrow_id}
+    ```
+- example
+    ```
+    node 01 $ wf arrow delete --arrow_id a1
+    +OK arrow "a1" is deleted.
     ```
 
 + Response 200 (application/json)
