@@ -147,10 +147,9 @@ HOST: http://192.168.100.100/api/v1/
 ### engine 상세정보 조회 - GET [GET]
 
 - engine의 상세 정보 조회
-- resource 옵션을 통해 engine에서 돌아가는 task의 resource별 sum 조회 가능
 - CLI
     ```
-    $wf engine info --engine_id {engine_id} (--resource)
+    $wf engine info --engine_id {engine_id}
     ```
 - example
     ```
@@ -164,21 +163,8 @@ HOST: http://192.168.100.100/api/v1/
     last_update_time    20181111000000
     num_of_task         10
     num_of_active_task  6
-    cpu                 21
-    memory              17
-    disk_io             1
-    network_io          1
-    file_cnt            3
-    thread_cnt          4
     ===================================
     ```
-
-+ Request (application/json)
-
-        {
-            ** optional
-            ("RESOURCE" : "True|False")
-        }
         
 + Response 200 (application/json)
 
@@ -190,15 +176,6 @@ HOST: http://192.168.100.100/api/v1/
             "LAST_UPDATE_TIME" : "20181111000000",
             "NUM_OF_TASK" : "10",
             "NUM_OF_ACTIVE_TASK" : "6",
-            
-            (
-            "CPU": "23",
-            "MEMORY" : "30",
-            "DISK_IO" : "11",
-            "NETWORK_IO" : "1",
-            "FILE_CNT" : "3",
-            "THREAD_CNT" : "4"
-            )
         }
 
 ### engine 삭제 - DELETE [DELETE]
@@ -819,11 +796,11 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node01 $ wf flow list
-    =================================================================================================================================
-    flow_name       flow_id     member_count        trm/init/act/abn        is_splitted        input_msg_count       output_msg_count
+    =============================================================================================================================================
+    flow_name       flow_id     member_count(task/arrow)       trm/init/act/abn        is_splitted        input_msg_count       output_msg_count
     
-    flow_rnc01        f1            5                  1/0/4/0                True                 0                     1000    
-    =================================================================================================================================
+    flow_rnc01        f1            5/4                            1/0/4/0                True                 0                     1000    
+    =============================================================================================================================================
     ```
         
 + Response 200 (application/json)
@@ -834,7 +811,7 @@ HOST: http://192.168.100.100/api/v1/
                     "FLOW_NAME": "flow_rnc01",
                     "FLOW_URL" : "http://192.168.100.100/api/v1/flows/f1",
                     
-                    "MEMBER_COUNT" : "5",
+                    "MEMBER_COUNT" : "5/4",
                     "INIT_COUNT" : "0",
                     "ACT_COUNT" : "4",
                     "TRM_COUNT" : "1",
@@ -958,6 +935,12 @@ HOST: http://192.168.100.100/api/v1/
     node01 $ wf flow update --flow_id f1 --task_add t5
     +OK task "t5" is added on flow "f1".
     ```
+- flow 내부의 sequence 변경 가능
+- example
+    ```
+    node01 $ wf flow update --flow_id f1 --sequence t1:3
+    +OK flow "f1" is updated.
+    ```
 
 + Request (application/json)
 
@@ -1038,7 +1021,7 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node01 $ wf flow status --flow_id f1
-    =============================================================================================================================
+    ===============================================================================================================================================================================
     sequne  flow_name       flow_id     member_type     member_name   member_id    status  last_exit_code   last_update_time  input_msg_count output_msg_count   output_type  arrow
                                                                                                            
     1        flow_rnc01        f1          task      get_ftp_rnc01    t1            act     1               20181211100523        0         10020                   broad    
@@ -1049,7 +1032,7 @@ HOST: http://192.168.100.100/api/v1/
            flow_rnc01        f1          arrow      ar1             a1                                                                                                  t1 -> t2    
            flow_rnc01        f1          arrow      ar2             a2                                                                                                  t2 -> t3    
            flow_rnc01        f1          arrow      ar3             a3                                                                                                  t3 -> t4    
-    ==============================================================================================================================
+    ================================================================================================================================================================================
     ```
 + Response 200 (application/json)
 
