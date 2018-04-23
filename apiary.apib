@@ -198,14 +198,14 @@ HOST: http://192.168.100.100/api/v1/
             "MESSAGE" : "[MESSAGE_STRING | ERROR CODE]"           
         }
         
-## Engine statistic [/engines/{engine_id}/statistic]
+## Engine statistics [/engines/{engine_id}/statistics]
 
 ### Engine 통계정보 조회 - GET [GET]
 
 - Engine의 통계 정보를 받아옴 (global_queue)
 - CLI
     ```
-    $wf engine statistic --engine_id {engine_id}
+    $wf engine statistics --engine_id {engine_id}
     ```
     
 + Response 200 (application/json)
@@ -505,14 +505,14 @@ HOST: http://192.168.100.100/api/v1/
            } 
 
 
-## Job statistic [/jobs/{job_id}/statistic]
+## Job statistics [/jobs/{job_id}/statistics]
 
 ### Job 통계정보 조회 - GET [GET]
 
 - Job 통계 정보를 받아옴
 - CLI
     ```
-    $wf job statistic --job_id {job_id}
+    $wf job statistics --job_id {job_id}
     ```
     
 + Response 200 (application/json)
