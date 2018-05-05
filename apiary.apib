@@ -1625,37 +1625,6 @@ HOST: http://192.168.100.100/api/v1/
                 "SCOPE" : "global"
             }
 
-
-
-### arrow 정보 수정 - PUT [PUT]
-- 해당 arrow를 수정함
-- 수정 가능 사항만 수정 가능
-    - arrow type
-    - arrow
-- CLI
-    ```
-    $wf arrow update --arrow_id {arrow_id} --arrow {arrow}
-    ```
-- example
-    ```
-    node 01 $ wf arrow update --arrow_id a1 --arrow t1->t3
-    +OK arrow "a1" is updated.
-    ```
-
-
-+ Request (application/json)
-
-           {
-               "ARROW" : "t1->t3"
-           }
-        
-
-+ Response 200 (application/json)
-
-           {
-               "RESULT" : "[OK|NOK]",
-               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"             
-           }
            
 ### arrow 삭제 - DELETE [DELETE]
 
