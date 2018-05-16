@@ -1404,10 +1404,11 @@ HOST: http://192.168.100.100/api/v1/
     ```
     node 01 $ wf task queue --task_id t1
     ================================================================================================
-    engine_name     engine_id       task_name       task_id     queue_type          data
+    input/output       queue_type           data
     
-    test_engine        e1           task01            t1        input_queue         1,2,3,4, ...
-    test_engine        e1           task01            t1        output_queue        10,20,30,40 ...
+    input              self.broadcast       1,2,3,4, ...
+    output             self.shared          10,20,30,40 ...
+    output             t2.broadcast         10,20,30,40 ...
     ================================================================================================
     ```
 
@@ -1461,6 +1462,28 @@ HOST: http://192.168.100.100/api/v1/
                "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]" 
            }
 
+
+### queue에 있는 데이터를 dump함 - POST [POST]
+    
+- 해당 task의 queue에 저장되어있는 데이터를 파일로 dump
+- CLI
+    ```
+    $wf task queue dump --task_id {task_id}
+    ```
+- example
+    ```
+    node 01 $ wf task queue dump --task_id t1
+    +OK dump task "t1".
+    ```
+        
++ Response 200 (application/json)
+
+           {
+               "RESULT" : "[OK|NOK]",
+               "MESSAGE" : "[MESSAGE_STRING | ERROR_CODE]"  
+            }
+        
+            
 ### queue에 데이터를 비움 - DELETE [DELETE]
     
 - 해당 task의 queue에 저장되어있는 데이터를 비움
