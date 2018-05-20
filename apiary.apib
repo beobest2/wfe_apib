@@ -10,15 +10,15 @@ HOST: http://192.168.100.100/api/v1/
 - Workflow-Engine
     - 실제 task를 띄우고 실행시키는 엔진
     - Task-agent 와 Task-monitor로 구성
-        - Task-agent가 사용자가 지정한 cmd를 subprocess로 실행 
+        - Task-agent가 사용자가 지정한 cmd를 sub-process로 실행 
         - Task-monitor가 task 상태 모니터링 
 - Job
     - 작업을 특정 시간 주기로 실행
         - task, flow, group 등록 가능
     - manager에서 crontab이 등록되어 실제 동작은 각 engine에서 수행
     - job 개별적 활성 상태 제어 가능
-        - 제어 : enable | disable
-        - 상태 : enabled | disabled
+        - 제어 : ACT | TRM
+        - 상태 : ACT | TRM | ABN
     - job의 id는 j로 시작
 - Group
     - 동시 control을 위해 사용자가 지정하는 task,flow,group 집합
@@ -27,8 +27,10 @@ HOST: http://192.168.100.100/api/v1/
     - 프로세스와 프로세스를(Task) 연결하는 흐름
         - ex > flow : A(task) ->(arrow) B(task) ->(arrow) C(task)
     - flow는 task, arrow를 포함
-    - flow는 
-        - start point task를 지정해서 flow 시작하거나, flow에 등록된 task sequence 순서대로 task 실행
+    - flow 실행 순서
+        - flow에 등록된 task sequence 순서대로 task 실행
+        - non-daemon프로세스의 경우 종료후 다음 순서의 task가 실행
+        - daemon 프로세스의 경우 바로 다음 task 실행 
         - task sequence 수정 가능
     - arrow가 끊어졌을 경우 splitted 상태 표시됨
     - flow의 id는 f로 시작
@@ -39,8 +41,8 @@ HOST: http://192.168.100.100/api/v1/
     - output 메세지 전송 방식에 따라 broad, shared 두 가지 타입을 가짐
     - 동작 방식에 따라 Daemon, NoneDaemon 으로 구분됨
     - task 개별적인 실행 정지 control 가능
-        - 상태 : init | act | trm | abn 
-        - 제어 : act  | trm
+        - 제어 : ACT | TRM
+        - 상태 : ACT | TRM | TRM 
     - 비정상 종료시 retry여부 option으로 지정 가능
         - retry 횟수 지정 가능
     - task의 id는 t로 시작
@@ -1391,18 +1393,18 @@ HOST: http://192.168.100.100/api/v1/
            }
            
 
-## Task queue [/tasks/{task_id}/queue]
+## Queue [/tasks/{task_id}/queue]
 
 ### queue 정보 받아옴 - GET [GET]
 
 - 해당 task의 모든 queue 정보를 가져옴
 - CLI
     ```
-    $wf task queue --task_id {task_id}
+    $wf queue list --task_id {task_id}
     ```
 - example
     ```
-    node 01 $ wf task queue --task_id t1
+    node 01 $ wf queue list --task_id t1
     ================================================================================================
     input/output       queue_type           data
     
@@ -1441,11 +1443,11 @@ HOST: http://192.168.100.100/api/v1/
 - 해당 task의 stdin queue에 데이터를 넣음
 - CLI
     ```
-    $wf task queue insert --task_id {task_id} --data {data}
+    $wf queue insert --task_id {task_id} --data {data}
     ```
 - example
     ```
-    node 01 $ wf task queue insert --task_id t1 --data "10,35"
+    node 01 $ wf queue insert --task_id t1 --data "10,35"
     +OK data is inserted into task "t1".
     ```
     
@@ -1468,11 +1470,11 @@ HOST: http://192.168.100.100/api/v1/
 - 해당 task의 queue에 저장되어있는 데이터를 파일로 dump
 - CLI
     ```
-    $wf task queue dump --task_id {task_id}
+    $wf queue dump --task_id {task_id}
     ```
 - example
     ```
-    node 01 $ wf task queue dump --task_id t1
+    node 01 $ wf task dump --task_id t1
     +OK dump task "t1".
     ```
         
@@ -1489,11 +1491,11 @@ HOST: http://192.168.100.100/api/v1/
 - 해당 task의 queue에 저장되어있는 데이터를 비움
 - CLI
     ```
-    $wf task queue empty --task_id {task_id}
+    $wf queue empty --task_id {task_id}
     ```
 - example
     ```
-    node 01 $ wf task queue empty --task_id t1
+    node 01 $ wf queue empty --task_id t1
     +OK empty task "t1".
     ```
         
