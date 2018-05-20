@@ -1312,10 +1312,10 @@ HOST: http://192.168.100.100/api/v1/
 ### task 상태 조회 - GET [GET]
 
 - task의 상태를 조회
-- resource option을 통해 task 기반 리소스 모니터링 가능
+
 - CLI
     ```
-    $wf task status --task_id {task_id} (--resource)
+    $wf task status --task_id {task_id}
     ```
 - example
     ```
@@ -1622,7 +1622,6 @@ HOST: http://192.168.100.100/api/v1/
     arrow_name      arrow01
     arrow_id        a1
     create_time     20180504112230
-    update_time     20180504112230
     arrow           t1->t2
     scope           global
     ================================
@@ -1642,7 +1641,6 @@ HOST: http://192.168.100.100/api/v1/
                 "ARROW_ID" : "a1",
                 "ARROW_URL" : "http://192.168.100.100/api/v1/arrows/{arrow_id}"
                 "CREATE_TIME" : "20180504112230",
-                "UPDATE_TIME" : "20180504112230",
                 
                 "ARROW" : "t1 -> t2",
                 "SCOPE" : "global"
