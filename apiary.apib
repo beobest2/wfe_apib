@@ -5,17 +5,19 @@ HOST: http://192.168.100.100/api/v1/
 
 - Workflow-Manager
     - 다수 또는 단일 workflow-engine을 관리
-    - REST api가 연결되는 통합 관리 모듈
+    - REST api로 연결되는 통합 engine 관리 모듈
     - manager가 관리하는 데이터베이스
+        - taskdb, arrowdb, groupdb, flowdb, jobdb
 - Workflow-Engine
-    - 실제 task를 띄우고 실행시키는 엔진
+    - 실제 task를 띄우고 실행
     - Task-agent 와 Task-monitor로 구성
         - Task-agent가 사용자가 지정한 cmd를 sub-process로 실행 
         - Task-monitor가 task 상태 모니터링 
 - Job
     - 작업을 특정 시간 주기로 실행
         - task, flow, group 등록 가능
-    - manager에서 crontab이 등록되어 실제 동작은 각 engine에서 수행
+    - manager에서 crontab이 등록되어 설정한 주기마다 실행
+        - 실제 동작은 각 engine에서 수행
     - job의 id는 j로 시작
 - Group
     - 동시 control을 위해 사용자가 지정하는 task,flow,group 집합
@@ -27,8 +29,8 @@ HOST: http://192.168.100.100/api/v1/
     - flow 실행 순서
         - flow에 등록된 task sequence 순서대로 task 실행
         - non-daemon프로세스의 경우 종료후 다음 순서의 task가 실행
-        - daemon 프로세스의 경우 바로 다음 task 실행 
-        - task sequence 수정 가능
+        - daemon 프로세스의 경우 바로 다음 task 실행 (동시에 flow내 모든 task가 act-status)
+        - 사용자가 task sequence 수정 가능
     - arrow가 끊어졌을 경우 splitted 상태 표시됨
     - flow의 id는 f로 시작
 - Task
@@ -36,24 +38,26 @@ HOST: http://192.168.100.100/api/v1/
     - 모든 프로그래밍 언어 지원
     - Workflow-Engine 에서 동작
     - output 메세지 전송 방식에 따라 broad, shared 두 가지 타입을 가짐
-    - 동작 방식에 따라 Daemon, NoneDaemon 으로 구분됨
+    - 동작 방식에 따라 Daemon, Non-Daemon 으로 구분됨
     - task 개별적인 실행 정지 control 가능
         - 제어 : ACT | TRM
-        - 상태 : ACT | TRM | TRM 
+        - 상태 : INIT | ACT | TRM | ABN
     - 비정상 종료시 retry여부 option으로 지정 가능
         - retry 횟수 지정 가능
     - task의 id는 t로 시작
 - Queue
-    - Task간에 데이터가 공유되는 queue
+    - Task간에 데이터가 이동하는 data structure
     - 하나의 task는 input과 output 두가지의 queue를 가짐
-    - 방향성 존재
+        - 방향성 존재
     - task 중단시 옵션으로 Queue의 데이터를 비우거나 disk에 dump 가능
         - 재실행시 dump된 데이터 load 가능
-    - broad 방식의 task일 때 목적 task의 input queue에 데이터를 전송
-    - shared 방식의 task일 때 목적 task가 output queue에서 데이터를 번갈아가며 가져감
+    - task의 output-type이 broad인지 shared인지에 따라 queue의 구성이 다름
+        - broad 방식의 task일 때 목적 task의 input queue에 데이터를 전송
+        - shared 방식의 task일 때 목적 task가 이전 task의 output queue를 공유함
 - Arrow
-    - task간의 데이터 연결 방식을 정의하는 단위
-    - flow가 먼저 정해진 후에 arrow 등록
+    - task간의 데이터 연결 방식을 정의
+    - flow가 먼저 생성된 후에 arrow는 flow를 지정해서 등록
+        - 독립적으로 arrow생성 불가
     - arrow는 1:1로 두개의 task를 연결하는 형태
         - A -> B
     - arrow의 id는 a로 시작
@@ -73,12 +77,8 @@ HOST: http://192.168.100.100/api/v1/
 - example
     ```
     node01 $ wf engine list
-    =========================================================================================
-    ip_addr             port     engine_name     engine_id   engine_status   last_update_time           
-    
-    192.168.100.150     9292     test_engine      e1           valid          20181111000000
-    192.168.100.151     9393     test_engine2     e2           valid          20181111000000
-    =========================================================================================
+        LAST_UPDATE_TIME | ENGINE_STATUS | ENGINE_ID | ENGINE_NAME | ENGINE_IP | ENGINE_PORT
+        20181111000000   |         valid |        e1 |     today01 | 127.0.0.1 |        5008
     ```
 
 + Response 200 (application/json)
@@ -86,21 +86,10 @@ HOST: http://192.168.100.100/api/v1/
         
         {
                 {
-                    "IP_ADDR" : "192.168.100.11",
-                    "PORT" : "5000",
+                    "ENGINE_IP" : "192.168.100.11",
+                    "ENGINE_PORT" : "5000",
                     "ENGINE_NAME": "test01",
                     "ENGINE_ID" : "e1",
-                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/e1",
-                    "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
-                    "LAST_UPDATE_TIME" : "20181111000000"
-                },
-                   
-                {
-                    "IP_ADDR" : "192.168.100.11",
-                    "PORT" : "5002",
-                    "ENGINE_NAME" : "test02",
-                    "ENGINE_ID" : "e2",
-                    "ENGHINE_URL" : "http://192.168.100.100/api/v1/engines/e2",
                     "ENGINE_STATUS" : "[VALID| INVALID | WAIT_RETRY]",
                     "LAST_UPDATE_TIME" : "20181111000000"
                 },
@@ -110,25 +99,25 @@ HOST: http://192.168.100.100/api/v1/
 ### engine 추가 - POST [POST]
 
 - engine을 추가함
-    - ip, port, engine_name을 파라메터로 전송 
+    - ip, port를 파라메터로 전송 
     - manager에서 engine_id 생성하여 응답
     - 실제 engine이 동작하는지 IP, Port, ENGINE_NAME 중복여부 체크 후 리스트에 추가
 - CLI
     ```
-    $wf engine add --engine_name {engine_name} --ip {ip_addr} --port {port}
+    $wf engine add --ip {ip_addr} --port {port}
     ``` 
 - example
     ```
-    node01 $ wf engine add –engine_name test_engine -ip 192.168.100.150 –port 9292
-    +OK test_engine add (engine_id : e3)
+    node01 $ wf engine add --ip 127.0.0.1 --port 5008
+                   MESSAGE             | RESULT | ENGINE_ID
+        e1 engine is created (today01) |     OK |        e1
     ```
     
 + Request (application/json)
 
         {
-            "ENGINE_NAME" : "test_engine",
-            "IP_ADDR": "192.168.100.21",
-            "PORT" : "5050"
+            "IP": "127.0.0.1",
+            "PORT" : "5008"
         }
 
         
@@ -152,7 +141,7 @@ HOST: http://192.168.100.100/api/v1/
     ```
 - example
     ```
-    node01 $ wf engine info --engine_id e3 --resource
+    node01 $ wf engine info --engine_id e3
     ===================================
     ip_addr             192.168.100.150
     port                9292
@@ -225,11 +214,11 @@ HOST: http://192.168.100.100/api/v1/
 - CHANGEABLE 옵션을 주어 변경 가능 or 변경 불가능 옵션별 조회 가능
 - CLI
     ```
-    $wf config list (--changeable [True|Flase])
+    $wf config list --engine_id {engine_id} (--changeable [True|Flase])
     ```
 - example
     ```
-    node01 $ wf config list
+    node01 $ wf config list --engine_id e1
     ===========================================================================
     config_key              config_value                            changeable
     
@@ -453,7 +442,7 @@ HOST: http://192.168.100.100/api/v1/
 ## Job activity [/jobs/{job_id}/activity]
 
 
-### Job 실행 제어 - PUT [PUT]
+### Job 활성 제어 - PUT [PUT]
 
 - job의 활성 상태를 on | off 을 통해 변경
 - job 처음 생성 시 on, 잠시 멈추고 싶을때 해당 명령어 사용
@@ -687,7 +676,7 @@ HOST: http://192.168.100.100/api/v1/
 - group에 속한 모든  task의 상태를 한꺼번에 끄거나 킴
 - CLI
     ```
-    $wf group control {[act|term]} --group_id {group_id}
+    $wf group control {[act|trm]} --group_id {group_id}
     ```
 - example
     ```
@@ -698,7 +687,7 @@ HOST: http://192.168.100.100/api/v1/
 + Request (application/json)
        
             {
-                "CONTROL" : "[act|term]"
+                "CONTROL" : "[act|trm]"
             }
            
 + Response 200 (application/json)
@@ -713,7 +702,7 @@ HOST: http://192.168.100.100/api/v1/
 ### group 상태 조회 - GET [GET]
 
 - group에 속한 모든  task의 상태를 조회
-    - flow또는 group이 멤버일 경우 해당 flow에 속하는 task 실행상태 표시 ??
+
 - CLI
     ```
     $wf group status --group_id {group_id}
@@ -1625,9 +1614,6 @@ HOST: http://192.168.100.100/api/v1/
            
 ### arrow 삭제 - DELETE [DELETE]
 
-
-- locking check
-    - 현재 arrow가 속한 flow가 동작중인지 확인
 - CLI
     ```
     $wf arrow delete --arrow_id {arrow_id}
